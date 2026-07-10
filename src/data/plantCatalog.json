@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Cherry Tomato",
+    "category": "Vegetable",
+    "waterEveryDays": 2,
+    "fertilizerEveryDays": 14
+  },
+  {
+    "name": "Mint",
+    "category": "Herb",
+    "waterEveryDays": 2,
+    "fertilizerEveryDays": 20
+  },
+  {
+    "name": "Lemon",
+    "category": "Fruit",
+    "waterEveryDays": 3,
+    "fertilizerEveryDays": 30
+  }
+]

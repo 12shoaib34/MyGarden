@@ -2,10 +2,11 @@
   "expo": {
     "name": "organic-garden-app",
     "slug": "organic-garden-app",
+    "scheme": "organic-garden-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true
     },
@@ -19,6 +20,18 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      [
+        "expo-navigation-bar",
+        {
+          "hidden": true,
+          "style": "light",
+          "enforceContrast": false
+        }
+      ]
+    ]
   }
 }

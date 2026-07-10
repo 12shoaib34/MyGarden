@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Leaf &amp; Soil - Cultivated Calm</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "on-secondary-fixed-variant": "#07521d",
+                "secondary-container": "#abf4ac",
+                "primary-fixed-dim": "#88d982",
+                "surface-container-lowest": "#ffffff",
+                "secondary-fixed-dim": "#90d792",
+                "outline": "#707a6c",
+                "tertiary-fixed": "#ffdbcf",
+                "on-surface": "#1a1c1a",
+                "on-primary-fixed": "#002204",
+                "error": "#ba1a1a",
+                "on-background": "#1a1c1a",
+                "inverse-on-surface": "#f1f1ed",
+                "on-primary-fixed-variant": "#005312",
+                "surface-bright": "#faf9f5",
+                "secondary": "#286b33",
+                "inverse-surface": "#2f312e",
+                "surface-container-low": "#f4f4f0",
+                "tertiary": "#704d40",
+                "on-tertiary-fixed-variant": "#603f33",
+                "surface-variant": "#e2e3df",
+                "surface-container-high": "#e8e8e4",
+                "on-tertiary-fixed": "#2e150b",
+                "on-surface-variant": "#40493d",
+                "on-error-container": "#93000a",
+                "on-tertiary": "#ffffff",
+                "outline-variant": "#bfcaba",
+                "primary": "#0d631b",
+                "on-tertiary-container": "#ffeee8",
+                "error-container": "#ffdad6",
+                "surface-container": "#eeeeea",
+                "primary-fixed": "#a3f69c",
+                "inverse-primary": "#88d982",
+                "on-error": "#ffffff",
+                "tertiary-fixed-dim": "#ebbcac",
+                "surface-tint": "#1b6d24",
+                "surface": "#faf9f5",
+                "primary-container": "#2e7d32",
+                "surface-container-highest": "#e2e3df",
+                "tertiary-container": "#8b6557",
+                "secondary-fixed": "#abf4ac",
+                "on-primary": "#ffffff",
+                "background": "#faf9f5",
+                "surface-dim": "#dadad6",
+                "on-secondary-fixed": "#002107",
+                "on-secondary-container": "#2e7238",
+                "on-primary-container": "#cbffc2",
+                "on-secondary": "#ffffff"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "base": "4px",
+                "xs": "4px",
+                "container-margin": "20px",
+                "xl": "32px",
+                "md": "16px",
+                "sm": "8px",
+                "lg": "24px",
+                "gutter": "16px"
+        },
+        "fontFamily": {
+                "label-lg": [
+                        "Plus Jakarta Sans"
+                ],
+                "label-sm": [
+                        "Plus Jakarta Sans"
+                ],
+                "body-md": [
+                        "Plus Jakarta Sans"
+                ],
+                "display-lg": [
+                        "Plus Jakarta Sans"
+                ],
+                "headline-lg-mobile": [
+                        "Plus Jakarta Sans"
+                ],
+                "body-lg": [
+                        "Plus Jakarta Sans"
+                ],
+                "title-lg": [
+                        "Plus Jakarta Sans"
+                ],
+                "headline-lg": [
+                        "Plus Jakarta Sans"
+                ]
+        },
+        "fontSize": {
+                "label-lg": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "letterSpacing": "0.1px",
+                                "fontWeight": "500"
+                        }
+                ],
+                "label-sm": [
+                        "11px",
+                        {
+                                "lineHeight": "16px",
+                                "letterSpacing": "0.5px",
+                                "fontWeight": "500"
+                        }
+                ],
+                "body-md": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "letterSpacing": "0.25px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "display-lg": [
+                        "57px",
+                        {
+                                "lineHeight": "64px",
+                                "letterSpacing": "-0.25px",
+                                "fontWeight": "700"
+                        }
+                ],
+                "headline-lg-mobile": [
+                        "28px",
+                        {
+                                "lineHeight": "36px",
+                                "fontWeight": "700"
+                        }
+                ],
+                "body-lg": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "letterSpacing": "0.5px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "title-lg": [
+                        "22px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-lg": [
+                        "32px",
+                        {
+                                "lineHeight": "40px",
+                                "fontWeight": "700"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+
+        /* Ambient Botanical Pattern */
+        .botanical-bg {
+            background-color: #faf9f5;
+            background-image: radial-gradient(#0d631b08 1.5px, transparent 1.5px);
+            background-size: 32px 32px;
+        }
+
+        @keyframes fade-in-up {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes logo-float {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-10px) scale(1.02); }
+        }
+
+        .animate-fade-in-up {
+            animation: fade-in-up 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .animate-logo {
+            animation: logo-float 6s ease-in-out infinite;
+        }
+
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md text-body-md overflow-hidden h-screen w-full selection:bg-primary-container selection:text-on-primary-container">
+<!-- Splash Canvas -->
+<main class="relative flex flex-col items-center justify-center h-full w-full botanical-bg px-container-margin overflow-hidden">
+<!-- Subtle Organic Blobs for Depth -->
+<div class="absolute -top-24 -left-24 w-96 h-96 bg-secondary-container opacity-20 blur-[100px] rounded-full"></div>
+<div class="absolute -bottom-24 -right-24 w-80 h-80 bg-primary opacity-10 blur-[100px] rounded-full"></div>
+<!-- Central Identity Cluster -->
+<div class="flex flex-col items-center text-center z-10 max-w-sm">
+<!-- Logo Container -->
+<div class="mb-12 animate-logo">
+<div class="w-32 h-32 md:w-40 md:h-40 bg-surface-container-lowest p-6 rounded-[40px] shadow-[0_20px_50px_rgba(13,99,27,0.08)] flex items-center justify-center">
+<i class="w-16 h-16 md:w-20 md:h-20 text-primary" data-lucide="leaf"></i>
+</div>
+</div>
+<!-- Brand Name -->
+<div class="animate-fade-in-up">
+<h1 class="font-display-lg text-primary text-headline-lg-mobile md:text-display-lg tracking-tight mb-2">
+                    Leaf &amp; Soil
+                </h1>
+</div>
+<!-- Tagline -->
+<div class="animate-fade-in-up delay-100">
+<p class="font-body-lg text-on-surface-variant tracking-wide opacity-80 italic">
+                    Organic Gardening &amp; Plant Care
+                </p>
+</div>
+</div>
+<!-- Interactive Micro-Atmosphere: Floating Particles -->
+<div class="absolute inset-0 pointer-events-none" id="atmosphere"></div>
+<!-- Footer / Progress (Subtle) -->
+<div class="absolute bottom-16 w-full flex flex-col items-center animate-fade-in-up delay-200">
+<div class="w-12 h-1 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full transition-all duration-[3000ms] ease-out w-0" id="splash-progress"></div>
+</div>
+<span class="mt-4 font-label-sm text-on-surface-variant uppercase tracking-[0.2em] opacity-40">Cultivating</span>
+</div>
+</main>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+        lucide.createIcons();
+        
+        // Start Progress Bar on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const progressBar = document.getElementById('splash-progress');
+            setTimeout(() => {
+                progressBar.style.width = '100%';
+            }, 100);
+
+            // Create gentle floating leaf-like particles
+            const atmosphere = document.getElementById('atmosphere');
+            for (let i = 0; i < 15; i++) {
+                const dot = document.createElement('div');
+                const size = Math.random() * 4 + 2;
+                dot.style.width = `${size}px`;
+                dot.style.height = `${size}px`;
+                dot.style.left = `${Math.random() * 100}%`;
+                dot.style.top = `${Math.random() * 100}%`;
+                dot.style.position = 'absolute';
+                dot.style.backgroundColor = '#1b6d24';
+                dot.style.borderRadius = '50%';
+                dot.style.opacity = (Math.random() * 0.15).toString();
+                dot.style.filter = 'blur(1px)';
+                
+                atmosphere.appendChild(dot);
+                
+                // Add gentle drift
+                dot.animate([
+                    { transform: 'translate(0, 0)' },
+                    { transform: `translate(${Math.random() * 40 - 20}px, ${Math.random() * 40 - 20}px)` }
+                ], {
+                    duration: 5000 + Math.random() * 5000,
+                    iterations: Infinity,
+                    direction: 'alternate',
+                    easing: 'ease-in-out'
+                });
+            }
+        });
+
+        // Click interaction to simulate entering the app
+        document.body.addEventListener('click', () => {
+            document.body.style.transition = 'opacity 0.8s ease-in-out';
+            document.body.style.opacity = '0';
+        });
+    </script>
+</body></html>
