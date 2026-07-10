@@ -1,33 +1,21 @@
 import { useEffect, useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import {
-  Camera,
-  Droplets,
-  Leaf,
-  Sprout,
-  Sun,
-  Wheat,
-} from "lucide-react-native";
+  Image,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { Camera, Droplets, Leaf, Sprout, Wheat } from "lucide-react-native";
 import { Card } from "../components/Card";
 import { DashboardHeader } from "../components/DashboardHeader";
+import { WeatherSummaryCard } from "../components/WeatherSummaryCard";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
+import { getSurjaniTownWeather } from "../services/weatherService";
 import { getDashboardStats, listPlants } from "../storage/database";
 import { useTheme } from "../theme/ThemeProvider";
-
-const previewPlants = [
-  {
-    name: "Monstera Deliciosa",
-    category: "Living Room",
-    image_uri:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAUhBIUoLmFnVvn8ySA0722AqFE0nt7hDt7W2xcbMGssJhKYunRpLtEzpFA16spTmv4HLUsNq_atptg8BWvwVQnmgFSetgR7EIaWSo7MdTSb_GPvSd4mRDBfA7H95CdRH16v_WfbrX8hT6ad3VnZ_IWajE4JE_C7PclQrWTPRWMKMBMy8A_G6E_RTamCIOuAvQT2_CdiTbl4ztyQCk5yDA-WgNr20h_n7ScXecaDSRbBKl3LeCEB8xSkFDA9AR-J8T5PDiKyzHMrK_T",
-  },
-  {
-    name: "Fiddle Leaf Fig",
-    category: "Bedroom",
-    image_uri:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuD3VyFW-mf23bR04A1hrZhB2nfiNx0sjYe_InXMtFcyckeqZHijiomkpKiaHGx6hKXGc1-z9T0MfOUfnqqnNdYWQIUhiDr09uh1dSRRLCqS1zb1HRBgYdEmc16-bur8sKADwLULH0y5zDO9muy2PuXd4YkxTlF1GtBE0Iu4ednybiFdkT6s3j4UqHN5tDr1rP7r9zjIl_SRTkTgQDwwQFcI72CHKDsONrRXWBllZt4vOPfoYGXyeP9TEE8YhrNhieyw9IvwrxAlmkPz",
-  },
-];
+import { getPlantAgeLabel } from "../utils/plantAge";
 
 export function HomeDashboardScreen() {
   const { theme } = useTheme();
@@ -40,19 +28,23 @@ export function HomeDashboardScreen() {
     harvestReady: 0,
   });
   const [plants, setPlants] = useState([]);
+  const [weather, setWeather] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     let alive = true;
 
     async function load() {
-      const [nextStats, nextPlants] = await Promise.all([
+      const [nextStats, nextPlants, nextWeather] = await Promise.all([
         getDashboardStats(),
         listPlants(),
+        getSurjaniTownWeather(),
       ]);
 
       if (alive) {
         setStats(nextStats);
         setPlants(nextPlants.slice(0, 2));
+        setWeather(nextWeather);
       }
     }
 
@@ -63,117 +55,130 @@ export function HomeDashboardScreen() {
     };
   }, []);
 
-  const gardenPlants = plants.length > 0 ? plants : previewPlants;
+  async function refreshDashboard() {
+    setRefreshing(true);
+
+    try {
+      const [nextStats, nextPlants, nextWeather] = await Promise.all([
+        getDashboardStats(),
+        listPlants(),
+        getSurjaniTownWeather({ forceRefresh: true }),
+      ]);
+
+      setStats(nextStats);
+      setPlants(nextPlants.slice(0, 2));
+      setWeather(nextWeather);
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   return (
-    <ScrollView
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={themedStyles.scroll}
-    >
+    <View style={themedStyles.screen}>
       <DashboardHeader />
 
-      <Card style={themedStyles.weatherCard}>
-        <View style={themedStyles.weatherIcon}>
-          <Sun size={30} color={theme.colors.primary} />
-        </View>
-        <View style={themedStyles.weatherMain}>
-          <Text style={themedStyles.weatherTitle}>24°C Sunny</Text>
-          <Text style={themedStyles.weatherBody}>
-            Perfect day for repotting
-          </Text>
-        </View>
-        <View style={themedStyles.weatherMeta}>
-          <Text style={themedStyles.metaGreen}>Humidity: 65%</Text>
-          <Text style={themedStyles.metaText}>Wind: 5km/h</Text>
-        </View>
-      </Card>
-
-      <View style={themedStyles.grid}>
-        <DashboardStat
-          label="Total Plants"
-          value={stats.totalPlants || 14}
-          Icon={Sprout}
-          tone="primary"
-        />
-        <DashboardStat
-          label="Needs Water"
-          value={stats.waterDue || 3}
-          Icon={Droplets}
-          tone="water"
-          background="#E3F2FD"
-        />
-        <DashboardStat
-          label="Fertilizer Due"
-          value={stats.fertilizerDue || 2}
-          Icon={Wheat}
-          tone="brown"
-          background="#F1ECE9"
-        />
-        <DashboardStat
-          label="Harvest Ready"
-          value={stats.harvestReady || 5}
-          Icon={Leaf}
-          tone="harvest"
-          background="#FFF1DD"
-        />
-      </View>
-
-      <View style={themedStyles.sectionHeader}>
-        <Text style={themedStyles.sectionTitle}>My Garden</Text>
-        <Text style={themedStyles.link}>View All</Text>
-      </View>
-
       <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={themedStyles.gardenRow}
-      >
-        {gardenPlants.map((plant, index) => (
-          <GardenCard
-            key={plant.id ?? plant.name}
-            plant={plant}
-            badge={index === 0 ? "HEALTHY" : "NEEDS WATER"}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={themedStyles.scroll}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={refreshDashboard}
+            tintColor={theme.colors.primary}
+            colors={[theme.colors.primary]}
+            progressBackgroundColor={theme.colors.surface}
           />
-        ))}
-      </ScrollView>
+        }
+      >
+        <WeatherSummaryCard weather={weather} />
 
-      <Text style={themedStyles.activityTitle}>Recent Activity</Text>
-      <View style={themedStyles.activities}>
-        <ActivityItem
-          Icon={Droplets}
-          title="Watered Monstera"
-          body="You gave 500ml of filtered water to your Monstera Deliciosa."
-          time="2h ago"
-          tone="water"
-        />
-        <ActivityItem
-          Icon={Wheat}
-          title="Fertilizer Applied"
-          body="Added organic seaweed fertilizer to the Snake Plant."
-          time="Yesterday"
-          tone="brown"
-        />
-        <ActivityItem
-          Icon={Camera}
-          title="New Growth Logged"
-          body="Captured a new leaf unfolding on the Pothos in the hallway."
-          time="2 days ago"
-          tone="primary"
-        />
-      </View>
-    </ScrollView>
+        <View style={themedStyles.grid}>
+          <DashboardStat
+            label="Total Plants"
+            value={stats.totalPlants}
+            Icon={Sprout}
+            tone="primary"
+            background={theme.colors.statSurface}
+          />
+          <DashboardStat
+            label="Needs Water"
+            value={stats.waterDue}
+            Icon={Droplets}
+            tone="water"
+            background={theme.colors.waterSurface ?? "#E3F2FD"}
+          />
+          <DashboardStat
+            label="Fertilizer Due"
+            value={stats.fertilizerDue}
+            Icon={Wheat}
+            tone="brown"
+            background={theme.colors.fertilizerSurface ?? "#F1ECE9"}
+          />
+          <DashboardStat
+            label="Harvest Ready"
+            value={stats.harvestReady}
+            Icon={Leaf}
+            tone="harvest"
+            background={theme.colors.harvestSurface ?? "#FFF1DD"}
+          />
+        </View>
+
+        <View style={themedStyles.sectionHeader}>
+          <Text style={themedStyles.sectionTitle}>My Garden</Text>
+          <Text style={themedStyles.link}>View All</Text>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={themedStyles.gardenRow}
+        >
+          {plants.length > 0 ? (
+            plants.map((plant) => (
+              <GardenCard key={plant.id ?? plant.name} plant={plant} />
+            ))
+          ) : (
+            <Card style={themedStyles.emptyGardenCard}>
+              <View style={themedStyles.emptyIcon}>
+                <Sprout size={28} color={theme.colors.primary} />
+              </View>
+              <Text style={themedStyles.emptyTitle}>No plants added</Text>
+              <Text style={themedStyles.emptyBody}>
+                Add plants from My Plants to see them here.
+              </Text>
+            </Card>
+          )}
+        </ScrollView>
+
+        <Text style={themedStyles.activityTitle}>Recent Activity</Text>
+        <Card style={themedStyles.emptyActivityCard}>
+          <View style={themedStyles.emptyIcon}>
+            <Camera size={26} color={theme.colors.primary} />
+          </View>
+          <Text style={themedStyles.emptyTitle}>No activity yet</Text>
+          <Text style={themedStyles.emptyBody}>
+            Watering, feeding, photos, and notes will appear here.
+          </Text>
+        </Card>
+      </ScrollView>
+    </View>
   );
 }
 
 function DashboardStat({ label, value, Icon, tone, background }) {
   const { theme } = useTheme();
   const color = theme.colors[tone] || theme.colors.primary;
+  const cardBackground =
+    background ??
+    (tone === "primary"
+      ? theme.colors.statSurface ?? theme.colors.surface
+      : theme.colors.surface);
 
   return (
     <Card
       style={[
         styles.statCard,
-        { backgroundColor: background || theme.colors.surface },
+        { backgroundColor: cardBackground },
       ]}
     >
       <Icon size={22} color={color} />
@@ -190,27 +195,33 @@ function DashboardStat({ label, value, Icon, tone, background }) {
   );
 }
 
-function GardenCard({ plant, badge }) {
+function GardenCard({ plant }) {
   const { theme } = useTheme();
-  const needsWater = badge === "NEEDS WATER";
+  const ageLabel = getPlantAgeLabel(plant.purchase_date);
 
   return (
     <Card style={styles.gardenCard}>
       <View style={styles.plantImage}>
-        <Image source={{ uri: plant.image_uri }} style={styles.image} />
+        {plant.image_uri ? (
+          <Image source={{ uri: plant.image_uri }} style={styles.image} />
+        ) : (
+          <Sprout size={34} color={theme.colors.primary} />
+        )}
         <View
           style={[
             styles.badge,
-            { backgroundColor: needsWater ? "#FFE8E8" : "#EAF7EC" },
+            {
+              backgroundColor: theme.colors.successSurface ?? "#EAF7EC",
+            },
           ]}
         >
           <Text
             style={[
               styles.badgeText,
-              { color: needsWater ? theme.colors.error : theme.colors.primary },
+              { color: theme.colors.primary },
             ]}
           >
-            {badge}
+            {ageLabel}
           </Text>
         </View>
       </View>
@@ -222,14 +233,6 @@ function GardenCard({ plant, badge }) {
           style={[theme.typography.label, { color: theme.colors.textMuted }]}
         >
           {plant.category}
-        </Text>
-        <Text
-          style={[
-            styles.waterText,
-            { color: needsWater ? theme.colors.error : theme.colors.water },
-          ]}
-        >
-          {needsWater ? "●  Water Today" : "●  Water in 2 days"}
         </Text>
       </View>
     </Card>
@@ -358,55 +361,14 @@ const styles = StyleSheet.create({
 
 function createStyles(theme) {
   return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
     scroll: {
-      paddingTop: 0,
+      paddingTop: 28,
       paddingHorizontal: 20,
       paddingBottom: 132,
-    },
-    weatherCard: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 16,
-      padding: 24,
-      minHeight: 128,
-      marginBottom: 24,
-      borderRadius: 28,
-      backgroundColor: theme.colors.surfaceSoft,
-    },
-    weatherIcon: {
-      width: 48,
-      height: 48,
-      borderRadius: 999,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: `${theme.colors.primary}12`,
-    },
-    weatherMain: {
-      flex: 1,
-      gap: 4,
-    },
-    weatherTitle: {
-      fontSize: 24,
-      lineHeight: 30,
-      fontWeight: "600",
-      color: theme.colors.text,
-    },
-    weatherBody: {
-      ...theme.typography.body,
-      color: theme.colors.textMuted,
-    },
-    weatherMeta: {
-      alignItems: "flex-end",
-      gap: 3,
-    },
-    metaGreen: {
-      ...theme.typography.label,
-      color: theme.colors.primary,
-    },
-    metaText: {
-      ...theme.typography.bodySmall,
-      color: theme.colors.textMuted,
     },
     grid: {
       flexDirection: "row",
@@ -440,6 +402,37 @@ function createStyles(theme) {
     },
     activities: {
       gap: 16,
+    },
+    emptyGardenCard: {
+      width: 260,
+      minHeight: 170,
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 22,
+      gap: 10,
+    },
+    emptyActivityCard: {
+      alignItems: "center",
+      padding: 24,
+      gap: 10,
+    },
+    emptyIcon: {
+      width: 54,
+      height: 54,
+      borderRadius: 18,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.colors.successSurface,
+    },
+    emptyTitle: {
+      ...theme.typography.title,
+      color: theme.colors.text,
+      textAlign: "center",
+    },
+    emptyBody: {
+      ...theme.typography.bodySmall,
+      color: theme.colors.textMuted,
+      textAlign: "center",
     },
   });
 }

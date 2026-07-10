@@ -1,14 +1,48 @@
+import { useEffect, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
-import { Bell } from "lucide-react-native";
+import { Moon, Sun, UserRound } from "lucide-react-native";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
+import { getSetting } from "../storage/database";
+import { getThemeFamilyId, getThemeIdForFamilyMode } from "../theme/themes";
 import { useTheme } from "../theme/ThemeProvider";
 
-const avatarUri =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuBR8qjm6unNEvy7exmTfQvScMqhELnMaQKELbSl6GNdwEcEjeYwSNUT1gwq0otnK5n0RmwIH6RJ5rCXm7XjbEDhhAjy8KJK4ummGpSFbHnNLbkmWLGLQakdFFysB1RV6BZ7HlEBhx0QUxcQrUX9slB-ID6nviitmQvg9FbZpizdVat6YRjl0GLB_j4ffKcBkQ14_iZktyYBTWvzBlHodMerttOEjT4I3vGqA6mLHeIiPJw7ph0NGV5KwkZ3_GHQU9RmoBc2eJgkwwg3";
-
-export function DashboardHeader({ name = "Alex Rivera" }) {
-  const { theme } = useTheme();
+export function DashboardHeader() {
+  const { theme, themeId, setThemeId } = useTheme();
   const insets = useGetSafeAreaInsets();
+  const [profile, setProfile] = useState({
+    firstName: "Alex",
+    lastName: "Rivera",
+    avatarUri: "",
+  });
+
+  useEffect(() => {
+    let alive = true;
+
+    async function loadProfile() {
+      const [firstName, lastName, avatarUri] = await Promise.all([
+        getSetting("profileFirstName", "Alex"),
+        getSetting("profileLastName", "Rivera"),
+        getSetting("profileAvatarUri", ""),
+      ]);
+      if (alive) {
+        setProfile({ firstName, lastName, avatarUri });
+      }
+    }
+
+    loadProfile();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const displayName = `${profile.firstName} ${profile.lastName}`.trim() || "Gardener";
+  const isDarkMode = theme.mode === "dark";
+
+  function toggleThemeMode() {
+    const familyId = getThemeFamilyId(themeId);
+    setThemeId(getThemeIdForFamilyMode(familyId, isDarkMode ? "light" : "dark"));
+  }
 
   return (
     <View
@@ -16,59 +50,80 @@ export function DashboardHeader({ name = "Alex Rivera" }) {
         styles.header,
         {
           borderBottomColor: theme.colors.border,
+          backgroundColor: theme.colors.background,
           paddingTop: insets.top,
         },
       ]}
     >
-      <View style={styles.profileRow}>
-        <View
-          style={[
-            styles.avatar,
-            {
-              backgroundColor: theme.colors.surface,
-              borderColor: `${theme.colors.primary}22`,
-            },
-          ]}
-        >
-          <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
-        </View>
-        <View>
-          <Text
-            style={[theme.typography.label, { color: theme.colors.textMuted }]}
-          >
-            Welcome back,
-          </Text>
-          <Text
+      <View style={styles.inner}>
+        <View style={styles.profileRow}>
+          <View
             style={[
-              theme.typography.title,
-              styles.name,
-              { color: theme.colors.primary },
+              styles.avatar,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: `${theme.colors.primary}22`,
+              },
             ]}
           >
-            {name}
-          </Text>
+            {profile.avatarUri ? (
+              <Image source={{ uri: profile.avatarUri }} style={styles.avatarImage} />
+            ) : (
+              <UserRound size={22} color={theme.colors.primary} />
+            )}
+          </View>
+          <View>
+            <Text
+              style={[theme.typography.label, { color: theme.colors.textMuted }]}
+            >
+              Welcome back,
+            </Text>
+            <Text
+              style={[
+                theme.typography.title,
+                styles.name,
+                { color: theme.colors.primary },
+              ]}
+            >
+              {displayName}
+            </Text>
+          </View>
         </View>
-      </View>
 
-      <Pressable
-        style={styles.bell}
-        accessibilityRole="button"
-        accessibilityLabel="Notifications"
-      >
-        <Bell size={22} color={theme.colors.textMuted} />
-      </Pressable>
+        <Pressable
+          style={[
+            styles.themeButton,
+            {
+              backgroundColor: theme.colors.surfaceSoft,
+              borderColor: theme.colors.border,
+            },
+          ]}
+          onPress={toggleThemeMode}
+          accessibilityRole="button"
+          accessibilityLabel="Toggle theme mode"
+        >
+          {isDarkMode ? (
+            <Sun size={21} color={theme.colors.primary} />
+          ) : (
+            <Moon size={21} color={theme.colors.primary} />
+          )}
+        </Pressable>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   header: {
+    width: "100%",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  inner: {
     minHeight: 64,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 28,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 20,
     paddingBottom: 14,
   },
   profileRow: {
@@ -92,11 +147,12 @@ const styles = StyleSheet.create({
   name: {
     lineHeight: 26,
   },
-  bell: {
+  themeButton: {
     width: 46,
     height: 46,
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
   },
 });

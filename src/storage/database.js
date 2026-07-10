@@ -48,6 +48,15 @@ export async function setSetting(key, value) {
   );
 }
 
+export async function getAllSettings() {
+  const db = await getDatabase();
+  const rows = await db.getAllAsync('SELECT key, value FROM settings');
+  return rows.reduce((settings, row) => {
+    settings[row.key] = row.value;
+    return settings;
+  }, {});
+}
+
 export async function createPlant(plant) {
   const db = await getDatabase();
   const now = new Date().toISOString();
@@ -67,6 +76,63 @@ export async function createPlant(plant) {
     now
   );
   return result.lastInsertRowId;
+}
+
+export async function updatePlant(id, plant) {
+  const db = await getDatabase();
+  await db.runAsync(
+    `UPDATE plants SET
+      name = ?,
+      variety = ?,
+      category = ?,
+      purchase_date = ?,
+      health_status = ?,
+      image_uri = ?,
+      notes = ?,
+      water_every_days = ?,
+      fertilizer_every_days = ?
+      WHERE id = ?`,
+    plant.name.trim(),
+    plant.variety.trim(),
+    plant.category,
+    plant.purchaseDate,
+    plant.healthStatus,
+    plant.imageUri || null,
+    plant.notes.trim(),
+    Number(plant.waterEveryDays) || 2,
+    Number(plant.fertilizerEveryDays) || 15,
+    Number(id)
+  );
+}
+
+export async function deletePlant(id) {
+  const db = await getDatabase();
+  await db.runAsync('DELETE FROM plants WHERE id = ?', Number(id));
+}
+
+export async function importPlants(plants = []) {
+  const db = await getDatabase();
+  const now = new Date().toISOString();
+
+  await db.withTransactionAsync(async () => {
+    for (const plant of plants) {
+      await db.runAsync(
+        `INSERT INTO plants
+          (name, variety, category, purchase_date, health_status, image_uri, notes, water_every_days, fertilizer_every_days, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        String(plant.name || '').trim(),
+        String(plant.variety || '').trim(),
+        plant.category || 'Indoor',
+        plant.purchase_date || plant.purchaseDate || now.slice(0, 10),
+        plant.health_status || plant.healthStatus || 'Healthy',
+        plant.image_uri || plant.imageUri || null,
+        String(plant.notes || '').trim(),
+        Number(plant.water_every_days || plant.waterEveryDays) || 2,
+        Number(plant.fertilizer_every_days || plant.fertilizerEveryDays) || 15,
+        plant.created_at || now
+      );
+    }
+  });
 }
 
 export async function listPlants() {

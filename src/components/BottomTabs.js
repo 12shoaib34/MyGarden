@@ -1,14 +1,16 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { CalendarDays, Home, Leaf, UserRound } from "lucide-react-native";
+import { BookOpen, Home, Leaf, UserRound } from "lucide-react-native";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { useTheme } from "../theme/ThemeProvider";
 
 const tabs = [
   ["home", "Home", Home],
   ["plants", "My Plants", Leaf],
-  ["calendar", "Calendar", CalendarDays],
+  ["info", "Plant Info", BookOpen],
   ["settings", "Profile", UserRound],
 ];
+
+export const bottomTabHeight = 110;
 
 export function BottomTabs({ active, onChange }) {
   const { theme } = useTheme();
@@ -19,7 +21,7 @@ export function BottomTabs({ active, onChange }) {
       style={[
         styles.tabbar,
         {
-          height: 90 + insets.bottom,
+          height: bottomTabHeight,
           paddingBottom: insets.bottom,
           backgroundColor: theme.colors.surfaceSoft,
         },

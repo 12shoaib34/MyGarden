@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "organic-garden-app",
-    "slug": "organic-garden-app",
-    "scheme": "organic-garden-app",
+    "name": "MyGarden",
+    "slug": "mygarden",
+    "scheme": "mygarden",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -16,7 +16,8 @@
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+      },
+      "package": "com.mygarden.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -25,11 +26,12 @@
       "expo-router",
       "expo-sqlite",
       [
-        "expo-navigation-bar",
+        "react-native-edge-to-edge",
         {
-          "hidden": true,
-          "style": "light",
-          "enforceContrast": false
+          "android": {
+            "parentTheme": "Default",
+            "enforceNavigationBarContrast": false
+          }
         }
       ]
     ]

@@ -1,0 +1,257 @@
+[
+  {
+    "id": "fig-anjeer",
+    "name": "Fig (Anjeer)",
+    "botanicalName": "Ficus carica",
+    "category": "Fruit",
+    "plantType": "Deciduous fruit tree",
+    "feederType": "Medium feeder",
+    "feederNote": "Fruiting ke time potassium aur organic nutrition ki demand barh jati hai.",
+    "totalAge": "50-100+ years with good care",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Ficus_carica_L%2C_1771.jpg/330px-Ficus_carica_L%2C_1771.jpg",
+    "growBagSizes": {
+      "average": "18 x 18 inch (15-20 gallon)",
+      "medium": "20 x 20 inch (25 gallon)",
+      "ideal": "24 x 24 inch (35-45 gallon)"
+    },
+    "karachiNotes": [
+      "Karachi ka warm climate fig ke liye suitable hai.",
+      "Young plants ko pehle saal peak afternoon heat se light protection dein.",
+      "Monsoon humidity me fig rust ka risk barh sakta hai, is liye air circulation maintain rakhein."
+    ],
+    "care": [
+      "Full sun: 6-8+ hours direct sunlight.",
+      "Well-draining soil use karein; waterlogging avoid karein.",
+      "Water tab dein jab top 2-3 inch soil dry ho.",
+      "Monthly compost light dose helpful hai.",
+      "Fruiting phase me potassium-rich organic feeding useful hoti hai.",
+      "Mulch moisture ko stable rakhta hai."
+    ],
+    "pruning": [
+      "Dead, weak, crossing branches remove karein.",
+      "Center ko open rakhein taake airflow improve ho.",
+      "Height control ke liye yearly pruning karein.",
+      "Base se nikalne wale suckers remove karein."
+    ],
+    "pests": [
+      "Fig rust mite",
+      "Mealybugs",
+      "Aphids",
+      "Scale insects",
+      "Spider mites",
+      "Whiteflies",
+      "Fruit flies",
+      "Ants"
+    ],
+    "diseases": [
+      "Fig rust",
+      "Root rot",
+      "Anthracnose",
+      "Leaf spot",
+      "Powdery mildew",
+      "Mosaic virus",
+      "Canker"
+    ],
+    "fruitInfo": {
+      "dormancyMonths": [12, 1],
+      "pruningMonths": [12, 1],
+      "fruitingMonths": [5, 6, 7, 8, 9],
+      "dormantSeason": "December-January in Karachi; sometimes early February if winter stays longer.",
+      "pruningSeason": "Late December-January during dormancy.",
+      "fruitingSeason": "May-July main crop; some varieties can continue into August-September."
+    },
+    "propagation": {
+      "airLayeringMonths": [3, 4, 7, 8, 9],
+      "cuttingMonths": [1, 2, 7, 8],
+      "bestMethod": "Air layering",
+      "methods": [
+        { "name": "Air Layering", "success": "5/5", "note": "Sabse easy aur high success." },
+        { "name": "Hardwood Cutting", "success": "4/5", "note": "January-February dormant cuttings ka success rate behtar hota hai." },
+        { "name": "Semi-hardwood Cutting", "success": "3/5", "note": "July-August me possible hai, moisture stable rakhein." },
+        { "name": "Seeds", "success": "1/5", "note": "True-to-type plant ke liye recommend nahi." }
+      ],
+      "notes": [
+        "July me Karachi me air layering achi chal sakti hai, medium moist rehna chahiye.",
+        "July me semi-hardwood cuttings possible hain, lekin dormant hardwood cuttings ka success aam tor par zyada hota hai."
+      ]
+    }
+  },
+  {
+    "id": "tomato",
+    "name": "Tomato",
+    "botanicalName": "Solanum lycopersicum",
+    "category": "Vegetable",
+    "plantType": "Warm-season annual vegetable",
+    "feederType": "Heavy feeder",
+    "totalAge": "4-6 months per crop",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Tomato_je.jpg/330px-Tomato_je.jpg",
+    "growBagSizes": {
+      "average": "12 x 12 inch (10-12 gallon)",
+      "medium": "15 x 15 inch (15-20 gallon)",
+      "ideal": "18 x 18 inch (20-25 gallon)"
+    },
+    "plantingMonths": [8, 9, 10, 11, 1, 2],
+    "care": [
+      "Full sun: 6-8 hours.",
+      "Deep watering karein, leaves ko wet na rakhein.",
+      "Stake/cage use karein taake plant upright rahe.",
+      "Compost plus balanced organic feeding regular rakhein.",
+      "Mulching soil moisture aur splash-borne disease risk control karti hai."
+    ],
+    "pruning": [
+      "Lower yellow leaves remove karein.",
+      "Indeterminate tomatoes me extra suckers control karein.",
+      "Airflow ke liye crowded foliage thin karein."
+    ],
+    "pests": ["Aphids", "Whiteflies", "Fruit borer", "Leaf miner", "Spider mites", "Thrips"],
+    "diseases": ["Early blight", "Late blight", "Leaf spot", "Powdery mildew", "Bacterial wilt", "Root rot"]
+  },
+  {
+    "id": "mint",
+    "name": "Mint",
+    "botanicalName": "Mentha spp.",
+    "category": "Herb",
+    "plantType": "Perennial herb",
+    "feederType": "Light to medium feeder",
+    "totalAge": "2-5 years with division and renewal",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Mentha_spicata-IMG_6186.jpg/330px-Mentha_spicata-IMG_6186.jpg",
+    "growBagSizes": {
+      "average": "8 x 8 inch",
+      "medium": "10 x 10 inch",
+      "ideal": "12 x 12 inch wide container"
+    },
+    "plantingMonths": [2, 3, 7, 8, 9, 10],
+    "care": [
+      "Morning sun with afternoon shade works well in Karachi heat.",
+      "Soil consistently moist rakhein, soggy nahi.",
+      "Container me grow karein kyunki mint spread karta hai.",
+      "Light compost feeding enough hoti hai."
+    ],
+    "pruning": [
+      "Regular tip harvesting se bushy growth aati hai.",
+      "Flower spikes remove karein for better leaves.",
+      "Leggy stems ko cut back karein."
+    ],
+    "pests": ["Aphids", "Spider mites", "Whiteflies", "Mealybugs"],
+    "diseases": ["Mint rust", "Powdery mildew", "Root rot", "Leaf spot"]
+  },
+  {
+    "id": "aloe-vera",
+    "name": "Aloe Vera",
+    "botanicalName": "Aloe vera",
+    "category": "Succulent",
+    "plantType": "Succulent perennial",
+    "feederType": "Light feeder",
+    "totalAge": "5-25 years with offsets",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Aloe_vera_flower_inset.png/330px-Aloe_vera_flower_inset.png",
+    "growBagSizes": {
+      "average": "8 x 8 inch",
+      "medium": "10 x 10 inch",
+      "ideal": "12 x 12 inch terracotta-style pot"
+    },
+    "plantingMonths": [2, 3, 9, 10, 11],
+    "care": [
+      "Bright light pasand hai, harsh summer afternoon sun se bachayein.",
+      "Cactus/succulent well-draining mix use karein.",
+      "Water only after soil dries fully.",
+      "Overwatering root rot ka main reason hai."
+    ],
+    "pruning": [
+      "Damaged outer leaves base se remove karein.",
+      "Offsets/pups ko separate kar ke new plants banayein."
+    ],
+    "pests": ["Mealybugs", "Scale insects", "Aphids", "Fungus gnats"],
+    "diseases": ["Root rot", "Leaf rot", "Aloe rust", "Soft rot"],
+    "succulentInfo": {
+      "wateringRule": "Dry soil cycle follow karein; saucer me standing water na rahe.",
+      "soilRule": "Fast-draining gritty mix best hai.",
+      "sunStressNote": "Brown tips heat, salt buildup, ya irregular watering se aa sakte hain."
+    }
+  },
+  {
+    "id": "monstera-deliciosa",
+    "name": "Monstera Deliciosa",
+    "botanicalName": "Monstera deliciosa",
+    "category": "Indoor",
+    "plantType": "Tropical indoor foliage plant",
+    "feederType": "Medium feeder",
+    "totalAge": "10+ years indoors with support",
+    "imageUrl": "https://images.pexels.com/photos/6297518/pexels-photo-6297518.jpeg?auto=compress&cs=tinysrgb&w=800",
+    "growBagSizes": {
+      "average": "10 x 10 inch",
+      "medium": "12 x 12 inch",
+      "ideal": "14-16 inch pot with moss pole"
+    },
+    "plantingMonths": [2, 3, 4, 8, 9, 10],
+    "care": [
+      "Bright indirect light best hai.",
+      "Top 1-2 inch soil dry ho to water dein.",
+      "Chunky aroid mix use karein.",
+      "Moss pole/support mature leaf size improve karta hai."
+    ],
+    "pruning": [
+      "Yellow/damaged leaves remove karein.",
+      "Long vines ko node ke upar cut karein.",
+      "Stem cuttings node ke saath propagate karein."
+    ],
+    "pests": ["Mealybugs", "Scale insects", "Spider mites", "Thrips"],
+    "diseases": ["Root rot", "Leaf spot", "Stem rot"]
+  },
+  {
+    "id": "marigold",
+    "name": "Marigold",
+    "botanicalName": "Tagetes spp.",
+    "category": "Flower",
+    "plantType": "Annual flowering plant",
+    "feederType": "Light to medium feeder",
+    "totalAge": "3-5 months per season",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Tagetes_erecta_chendumalli_chedi.jpg/330px-Tagetes_erecta_chendumalli_chedi.jpg",
+    "growBagSizes": {
+      "average": "8 x 8 inch",
+      "medium": "10 x 10 inch",
+      "ideal": "12 x 12 inch for large varieties"
+    },
+    "plantingMonths": [9, 10, 11, 2, 3],
+    "care": [
+      "Full sun me best flowering hoti hai.",
+      "Well-draining soil use karein.",
+      "Over-fertilizing se leaves zyada aur flowers kam ho sakte hain.",
+      "Spent flowers remove karein."
+    ],
+    "pruning": [
+      "Pinching se branching improve hoti hai.",
+      "Deadheading se flowering continue rehti hai."
+    ],
+    "pests": ["Aphids", "Spider mites", "Thrips", "Leaf miners"],
+    "diseases": ["Powdery mildew", "Root rot", "Leaf spot", "Botrytis"]
+  },
+  {
+    "id": "neem",
+    "name": "Neem",
+    "botanicalName": "Azadirachta indica",
+    "category": "Tree",
+    "plantType": "Evergreen medicinal tree",
+    "feederType": "Light feeder",
+    "totalAge": "100+ years in ground",
+    "imageUrl": "https://images.pexels.com/photos/4503751/pexels-photo-4503751.jpeg?auto=compress&cs=tinysrgb&w=800",
+    "growBagSizes": {
+      "average": "18 x 18 inch for young plant",
+      "medium": "24 x 24 inch temporary container",
+      "ideal": "Ground planting recommended"
+    },
+    "plantingMonths": [2, 3, 7, 8, 9],
+    "care": [
+      "Full sun and heat tolerant.",
+      "Deep but infrequent watering after establishment.",
+      "Well-draining soil zaroori hai.",
+      "Container me long-term root restriction ho sakti hai."
+    ],
+    "pruning": [
+      "Young tree ko single leader shape dein.",
+      "Dead/crossing branches remove karein.",
+      "Hard pruning avoid karein unless needed."
+    ],
+    "pests": ["Scale insects", "Mealybugs", "Aphids", "Leaf miners"],
+    "diseases": ["Root rot", "Leaf spot", "Powdery mildew"]
+  }
+]

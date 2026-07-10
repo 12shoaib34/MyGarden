@@ -1,7 +1,15 @@
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 
-export function TextField({ label, value, onChangeText, placeholder, keyboardType, multiline }) {
+export function TextField({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  keyboardType,
+  multiline,
+  onFocus,
+}) {
   const { theme } = useTheme();
   return (
     <View style={styles.wrap}>
@@ -13,6 +21,7 @@ export function TextField({ label, value, onChangeText, placeholder, keyboardTyp
         placeholderTextColor={theme.colors.textMuted}
         keyboardType={keyboardType}
         multiline={multiline}
+        onFocus={onFocus}
         style={[
           styles.input,
           theme.typography.body,
