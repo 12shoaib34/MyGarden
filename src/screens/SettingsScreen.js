@@ -241,6 +241,7 @@ export function SettingsScreen() {
           />
         </View>
       </Card>
+      {/*
       <Card style={themedStyles.settingsCard}>
         <View style={themedStyles.settingsHeader}>
           <Bell size={22} color={theme.colors.primary} />
@@ -256,6 +257,7 @@ export function SettingsScreen() {
           disabled={notificationBusy}
         />
       </Card>
+      */}
       <Card style={themedStyles.settingsCard}>
         <View style={themedStyles.settingsHeader}>
           <Database size={22} color={theme.colors.primary} />
