@@ -33,7 +33,7 @@ import { deletePlant, listPlants, setPlantFavorite } from "../storage/database";
 import { useTheme } from "../theme/ThemeProvider";
 import { getPlantAgeLabel } from "../utils/plantAge";
 
-const filters = ["All", "Indoor", "Vegetable", "Herb", "Succulent", "Fruit"];
+const filters = ["All", "Vegetable", "Fruit", "Herb", "Tree", "Flower", "Indoor", "Succulent"];
 
 export function PlantsScreen({ onAddPlant, onEditPlant }) {
   const { theme } = useTheme();

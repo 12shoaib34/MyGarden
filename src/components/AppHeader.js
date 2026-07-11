@@ -25,8 +25,7 @@ export function AppHeader({ icon: Icon, imageUri, title, subtitle, children, rig
           styles.statusStrip,
           {
             height: insets.top,
-            backgroundColor:
-              theme.mode === "dark" ? theme.colors.primary : theme.colors.background,
+            backgroundColor: theme.colors.background,
           },
         ]}
       />
