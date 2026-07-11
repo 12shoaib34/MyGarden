@@ -263,6 +263,15 @@ export async function listPlants() {
   );
 }
 
+export async function listLatestPlants(limit = 5) {
+  return runDatabaseOperation((db) =>
+    db.getAllAsync(
+      'SELECT * FROM plants ORDER BY id DESC LIMIT ?',
+      [Number(limit) || 5]
+    )
+  );
+}
+
 export async function getPlant(id) {
   return runDatabaseOperation((db) =>
     db.getFirstAsync('SELECT * FROM plants WHERE id = ?', [Number(id)])

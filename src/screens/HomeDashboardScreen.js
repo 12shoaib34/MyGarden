@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   Image,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -13,11 +14,11 @@ import { DashboardHeader } from "../components/DashboardHeader";
 import { WeatherSummaryCard } from "../components/WeatherSummaryCard";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { getSurjaniTownWeather } from "../services/weatherService";
-import { getDashboardStats, listPlants } from "../storage/database";
+import { getDashboardStats, listLatestPlants } from "../storage/database";
 import { useTheme } from "../theme/ThemeProvider";
 import { getPlantAgeLabel } from "../utils/plantAge";
 
-export function HomeDashboardScreen() {
+export function HomeDashboardScreen({ onViewAllPlants }) {
   const { theme } = useTheme();
   const insets = useGetSafeAreaInsets();
   const themedStyles = createStyles(theme, insets);
@@ -37,13 +38,13 @@ export function HomeDashboardScreen() {
     async function load() {
       const [nextStats, nextPlants, nextWeather] = await Promise.all([
         getDashboardStats(),
-        listPlants(),
+        listLatestPlants(5),
         getSurjaniTownWeather(),
       ]);
 
       if (alive) {
         setStats(nextStats);
-        setPlants(nextPlants.slice(0, 2));
+        setPlants(nextPlants);
         setWeather(nextWeather);
       }
     }
@@ -61,12 +62,12 @@ export function HomeDashboardScreen() {
     try {
       const [nextStats, nextPlants, nextWeather] = await Promise.all([
         getDashboardStats(),
-        listPlants(),
+        listLatestPlants(5),
         getSurjaniTownWeather({ forceRefresh: true }),
       ]);
 
       setStats(nextStats);
-      setPlants(nextPlants.slice(0, 2));
+      setPlants(nextPlants);
       setWeather(nextWeather);
     } finally {
       setRefreshing(false);
@@ -125,7 +126,16 @@ export function HomeDashboardScreen() {
 
         <View style={themedStyles.sectionHeader}>
           <Text style={themedStyles.sectionTitle}>My Garden</Text>
-          <Text style={themedStyles.link}>View All</Text>
+          <Pressable
+            onPress={onViewAllPlants}
+            hitSlop={12}
+            style={({ pressed }) => [
+              themedStyles.linkButton,
+              { opacity: pressed ? 0.72 : 1 },
+            ]}
+          >
+            <Text style={themedStyles.link}>View All</Text>
+          </Pressable>
         </View>
 
         <ScrollView
@@ -390,6 +400,11 @@ function createStyles(theme) {
     link: {
       ...theme.typography.label,
       color: theme.colors.primary,
+    },
+    linkButton: {
+      minHeight: 36,
+      paddingLeft: 12,
+      justifyContent: "center",
     },
     gardenRow: {
       paddingBottom: 24,
