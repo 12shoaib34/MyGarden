@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Alert, Image, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import { Image, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Bell, Camera, Check, Database, Download, FolderOpen, Moon, Palette, Settings, Upload, UserRound } from "lucide-react-native";
 import { AppHeader } from "../components/AppHeader";
+import { useAppDialog } from "../components/AppDialog";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import { TextField } from "../components/TextField";
@@ -22,6 +23,7 @@ import { useTheme } from "../theme/ThemeProvider";
 
 export function SettingsScreen() {
   const { theme, themeId, setThemeId } = useTheme();
+  const { showDialog } = useAppDialog();
   const insets = useGetSafeAreaInsets();
   const themedStyles = createStyles(theme, insets);
   const selectedFamilyId = getThemeFamilyId(themeId);
@@ -61,15 +63,20 @@ export function SettingsScreen() {
       const result = await chooseBackupFolder();
       if (result?.uri) {
         setBackupFolderUri(result.uri);
-        Alert.alert(
-          result.existingBackup ? "Backup found" : "Backup enabled",
-          result.existingBackup
+        await showDialog({
+          title: result.existingBackup ? "Backup found" : "Backup enabled",
+          message: result.existingBackup
             ? "Existing backup found. Press Import Backup to restore it."
-            : "Your plants will be backed up to this phone folder."
-        );
+            : "Your plants will be backed up to this phone folder.",
+          variant: result.existingBackup ? "info" : "success",
+        });
       }
     } catch (error) {
-      Alert.alert("Backup setup failed", error.message);
+      await showDialog({
+        title: "Backup setup failed",
+        message: error.message,
+        variant: "error",
+      });
     } finally {
       setBackupBusy(false);
     }
@@ -79,9 +86,17 @@ export function SettingsScreen() {
     setBackupBusy(true);
     try {
       const result = await exportBackup();
-      Alert.alert(result.ok ? "Backup exported" : "Backup not ready", result.ok ? `${result.count} plants saved to backup.` : result.message);
+      await showDialog({
+        title: result.ok ? "Backup exported" : "Backup not ready",
+        message: result.ok ? `${result.count} plants saved to backup.` : result.message,
+        variant: result.ok ? "success" : "warning",
+      });
     } catch (error) {
-      Alert.alert("Backup failed", error.message);
+      await showDialog({
+        title: "Backup failed",
+        message: error.message,
+        variant: "error",
+      });
     } finally {
       setBackupBusy(false);
     }
@@ -101,9 +116,17 @@ export function SettingsScreen() {
         setLastName(savedLastName);
         setAvatarUri(savedAvatarUri);
       }
-      Alert.alert(result.ok ? "Backup imported" : "Import not ready", result.ok ? `${result.count} plants imported from backup.` : result.message);
+      await showDialog({
+        title: result.ok ? "Backup imported" : "Import not ready",
+        message: result.ok ? formatImportResultMessage(result) : result.message,
+        variant: result.ok ? "success" : "warning",
+      });
     } catch (error) {
-      Alert.alert("Import failed", error.message);
+      await showDialog({
+        title: "Import failed",
+        message: error.message,
+        variant: "error",
+      });
     } finally {
       setBackupBusy(false);
     }
@@ -112,7 +135,11 @@ export function SettingsScreen() {
   async function pickProfileImage() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert("Permission needed", "Gallery access is needed to choose a profile image.");
+      await showDialog({
+        title: "Permission needed",
+        message: "Gallery access is needed to choose a profile image.",
+        variant: "warning",
+      });
       return;
     }
 
@@ -137,9 +164,17 @@ export function SettingsScreen() {
       await setSetting("profileAvatarUri", backedUpAvatarUri);
       setAvatarUri(backedUpAvatarUri);
       await autoExportBackup();
-      Alert.alert("Profile saved", "Your profile is saved locally and included in backup.");
+      await showDialog({
+        title: "Profile saved",
+        message: "Your profile is saved locally and included in backup.",
+        variant: "success",
+      });
     } catch (error) {
-      Alert.alert("Profile save failed", error.message);
+      await showDialog({
+        title: "Profile save failed",
+        message: error.message,
+        variant: "error",
+      });
     } finally {
       setProfileBusy(false);
     }
@@ -149,14 +184,19 @@ export function SettingsScreen() {
     setNotificationBusy(true);
     try {
       const result = await sendTestWaterReminderNotification();
-      Alert.alert(
-        result.ok ? "Test notification sent" : "Notification permission needed",
-        result.ok
+      await showDialog({
+        title: result.ok ? "Test notification sent" : "Notification permission needed",
+        message: result.ok
           ? "A water plants reminder was sent now."
-          : "Allow notifications for MyGarden, then try again."
-      );
+          : "Allow notifications for MyGarden, then try again.",
+        variant: result.ok ? "success" : "warning",
+      });
     } catch (error) {
-      Alert.alert("Notification failed", error.message);
+      await showDialog({
+        title: "Notification failed",
+        message: error.message,
+        variant: "error",
+      });
     } finally {
       setNotificationBusy(false);
     }
@@ -317,6 +357,22 @@ function IconNote({ icon: Icon, text }) {
       <Text style={themedStyles.iconNoteText}>{text}</Text>
     </View>
   );
+}
+
+function formatImportResultMessage(result) {
+  const parts = [`${result.count} plants checked from backup.`];
+
+  if (result.inserted > 0) {
+    parts.push(`${result.inserted} new plants added.`);
+  }
+  if (result.skipped > 0) {
+    parts.push(`${result.skipped} duplicates skipped.`);
+  }
+  if (result.removedDuplicates > 0) {
+    parts.push(`${result.removedDuplicates} existing duplicates cleaned.`);
+  }
+
+  return parts.join("\n");
 }
 
 function ThemeFamilyButton({ family, selected, onPress }) {

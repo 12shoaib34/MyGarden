@@ -41,18 +41,19 @@ Main design reference used heavily:
 
 ### Entry
 
-- `App.js`
+- `package.json`
+  - Uses `expo-router/entry` as the app entry point.
+
+- `app/_layout.js`
   - Wraps the app in `AppProviders`.
-  - Renders `AppRoot`.
+  - Uses Expo Router `Stack` for native screen navigation and animations.
+
+- `app/(tabs)/_layout.js`
+  - Uses Expo Router `Tabs` with `backBehavior="history"`.
+  - Renders the custom `BottomTabs` component only as the tab bar UI.
 
 - `src/providers/AppProviders.js`
   - Provides keyboard controller, theme provider, and safe area provider.
-
-- `src/navigation/AppRoot.js`
-  - Handles simple tab/state navigation.
-  - Tabs: Home, My Plants, Plant Info, Profile/Settings.
-  - Handles Add/Edit Plant screen state.
-  - Initializes daily notifications.
 
 ### Components
 
@@ -344,4 +345,3 @@ adb install -r android/app/build/outputs/apk/release/app-release.apk
 - App package: `com.mygarden.app`
 - App name: `MyGarden`
 - Expo doctor passed 20/20 checks.
-

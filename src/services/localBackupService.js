@@ -134,8 +134,8 @@ export async function importLatestBackup() {
     }
   }
   const plants = Array.isArray(payload.plants) ? payload.plants : [];
-  await importPlants(plants);
-  return { ok: true, count: plants.length };
+  const importResult = await importPlants(plants);
+  return { ok: true, count: plants.length, ...importResult };
 }
 
 async function findBackupFile(folderUri) {

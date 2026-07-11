@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  Alert,
   Image,
   Pressable,
   StyleSheet,
@@ -13,6 +12,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import { Chip } from "../components/Chip";
+import { useAppDialog } from "../components/AppDialog";
 import { TextField } from "../components/TextField";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { autoExportBackup, backupImageIfEnabled } from "../services/localBackupService";
@@ -31,6 +31,7 @@ const categories = [
 
 export function AddPlantScreen({ plant, onCancel, onSaved }) {
   const { theme } = useTheme();
+  const { showConfirm, showDialog } = useAppDialog();
   const insets = useGetSafeAreaInsets();
   const styles = createStyles(theme, insets);
   const isEditing = Boolean(plant?.id);
@@ -47,10 +48,11 @@ export function AddPlantScreen({ plant, onCancel, onSaved }) {
   async function pickImage() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert(
-        "Permission needed",
-        "Gallery access is needed to attach a plant image.",
-      );
+      await showDialog({
+        title: "Permission needed",
+        message: "Gallery access is needed to attach a plant image.",
+        variant: "warning",
+      });
       return;
     }
 
@@ -68,7 +70,11 @@ export function AddPlantScreen({ plant, onCancel, onSaved }) {
 
   async function savePlant() {
     if (!name.trim()) {
-      Alert.alert("Plant name required", "Please enter a plant name.");
+      await showDialog({
+        title: "Plant name required",
+        message: "Please enter a plant name.",
+        variant: "warning",
+      });
       return;
     }
 
@@ -94,40 +100,45 @@ export function AddPlantScreen({ plant, onCancel, onSaved }) {
       await autoExportBackup();
       onSaved?.();
     } catch (error) {
-      Alert.alert("Could not save plant", error.message);
+      await showDialog({
+        title: "Could not save plant",
+        message: error.message,
+        variant: "error",
+      });
     } finally {
       setSaving(false);
     }
   }
 
-  function confirmDeletePlant() {
+  async function confirmDeletePlant() {
     if (!isEditing) {
       return;
     }
 
-    Alert.alert(
-      "Delete plant?",
-      "This plant will be removed from My Plants and backup will be updated.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            setSaving(true);
-            try {
-              await deletePlant(plant.id);
-              await autoExportBackup();
-              onSaved?.();
-            } catch (error) {
-              Alert.alert("Could not delete plant", error.message);
-            } finally {
-              setSaving(false);
-            }
-          },
-        },
-      ]
-    );
+    const confirmed = await showConfirm({
+      title: "Delete plant?",
+      message: "This plant will be removed from My Plants and backup will be updated.",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!confirmed) {
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await deletePlant(plant.id);
+      await autoExportBackup();
+      onSaved?.();
+    } catch (error) {
+      await showDialog({
+        title: "Could not delete plant",
+        message: error.message,
+        variant: "error",
+      });
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (

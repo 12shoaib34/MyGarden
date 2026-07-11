@@ -1,13 +1,16 @@
 import { StyleSheet } from "react-native";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { AppDialogProvider } from "../components/AppDialog";
 import { AppThemeProvider, useTheme } from "../theme/ThemeProvider";
 
 export function AppProviders({ children }) {
   return (
     <KeyboardProvider>
       <AppThemeProvider>
-        <ThemedSafeAreaProvider>{children}</ThemedSafeAreaProvider>
+        <ThemedSafeAreaProvider>
+          <AppDialogProvider>{children}</AppDialogProvider>
+        </ThemedSafeAreaProvider>
       </AppThemeProvider>
     </KeyboardProvider>
   );

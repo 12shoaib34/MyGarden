@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -10,12 +9,14 @@ import {
   View,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
-import { Copy, Leaf, Plus, Search, SlidersHorizontal, Sprout } from "lucide-react-native";
+import { Copy, Leaf, Plus, Search, SlidersHorizontal, Sprout, Trash2 } from "lucide-react-native";
 import { AppHeader } from "../components/AppHeader";
+import { useAppDialog } from "../components/AppDialog";
 import { Card } from "../components/Card";
 import { Chip } from "../components/Chip";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
-import { listPlants } from "../storage/database";
+import { autoExportBackup } from "../services/localBackupService";
+import { deletePlant, listPlants } from "../storage/database";
 import { useTheme } from "../theme/ThemeProvider";
 import { getPlantAgeLabel } from "../utils/plantAge";
 
@@ -23,11 +24,13 @@ const filters = ["All", "Indoor", "Vegetable", "Herb", "Succulent", "Fruit"];
 
 export function PlantsScreen({ onAddPlant, onEditPlant }) {
   const { theme } = useTheme();
+  const { showConfirm, showDialog } = useAppDialog();
   const insets = useGetSafeAreaInsets();
   const themedStyles = createStyles(theme, insets);
   const [plants, setPlants] = useState([]);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("All");
+  const [deletingPlantId, setDeletingPlantId] = useState(null);
 
   useEffect(() => {
     let alive = true;
@@ -49,25 +52,68 @@ export function PlantsScreen({ onAddPlant, onEditPlant }) {
   const visiblePlants = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    return plants.filter((plant) => {
-      const matchesFilter = filter === "All" || plant.category === filter;
-      const haystack = `${plant.name} ${plant.category} ${plant.variety ?? ""}`
-        .toLowerCase()
-        .trim();
+    return plants
+      .filter((plant) => {
+        const matchesFilter = filter === "All" || plant.category === filter;
+        const haystack = `${plant.name} ${plant.category} ${plant.variety ?? ""}`
+          .toLowerCase()
+          .trim();
 
-      return matchesFilter && haystack.includes(normalizedQuery);
-    });
+        return matchesFilter && haystack.includes(normalizedQuery);
+      })
+      .sort(comparePlantsByName);
   }, [filter, plants, query]);
 
   async function copyPlantsByCategory() {
     if (!plants.length) {
-      Alert.alert("No plants", "Add plants first, then copy the list.");
+      await showDialog({
+        title: "No plants",
+        message: "Add plants first, then copy the list.",
+        variant: "warning",
+      });
       return;
     }
 
     const text = formatPlantsByCategory(plants);
     await Clipboard.setStringAsync(text);
-    Alert.alert("Copied", "Plant names copied category wise.");
+    await showDialog({
+      title: "Copied",
+      message: "Plant names copied category wise.",
+      variant: "success",
+    });
+  }
+
+  async function confirmDeletePlant(plant) {
+    const confirmed = await showConfirm({
+      title: "Delete plant?",
+      message: `${plant.name} will be removed from My Plants and backup will be updated.`,
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (confirmed) {
+      await handleDeletePlant(plant);
+    }
+  }
+
+  async function handleDeletePlant(plant) {
+    if (deletingPlantId) {
+      return;
+    }
+
+    setDeletingPlantId(plant.id);
+    try {
+      await deletePlant(plant.id);
+      setPlants((currentPlants) => currentPlants.filter((item) => item.id !== plant.id));
+      await autoExportBackup();
+    } catch (error) {
+      await showDialog({
+        title: "Delete failed",
+        message: error.message,
+        variant: "error",
+      });
+    } finally {
+      setDeletingPlantId(null);
+    }
   }
 
   return (
@@ -148,6 +194,8 @@ export function PlantsScreen({ onAddPlant, onEditPlant }) {
                 key={plant.id}
                 plant={plant}
                 onPress={() => onEditPlant?.(plant)}
+                onDelete={() => confirmDeletePlant(plant)}
+                deleting={deletingPlantId === plant.id}
               />
             ))
           ) : (
@@ -190,7 +238,14 @@ function formatPlantsByCategory(plants) {
     .join("\n\n");
 }
 
-function PlantListCard({ plant, onPress }) {
+function comparePlantsByName(firstPlant, secondPlant) {
+  return String(firstPlant.name || "").localeCompare(String(secondPlant.name || ""), undefined, {
+    sensitivity: "base",
+    numeric: true,
+  });
+}
+
+function PlantListCard({ plant, onPress, onDelete, deleting }) {
   const { theme } = useTheme();
 
   return (
@@ -210,19 +265,42 @@ function PlantListCard({ plant, onPress }) {
             )}
           </View>
           <View style={styles.cardBody}>
-            <View style={styles.cardTitleText}>
-              <Text style={[styles.plantName, { color: theme.colors.text }]}>
-                {plant.name}
-              </Text>
-              <Text
-                style={[
-                  theme.typography.bodySmall,
-                  { color: theme.colors.textMuted },
+            <View style={styles.cardTopRow}>
+              <View style={styles.cardTitleText}>
+                <Text
+                  style={[styles.plantName, { color: theme.colors.text }]}
+                  numberOfLines={2}
+                >
+                  {plant.name}
+                </Text>
+                <Text
+                  style={[
+                    theme.typography.bodySmall,
+                    { color: theme.colors.textMuted },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {plant.category}
+                  {plant.variety ? ` - ${plant.variety}` : ""}
+                </Text>
+              </View>
+              <Pressable
+                onPress={onDelete}
+                disabled={deleting}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={`Delete ${plant.name}`}
+                style={({ pressed }) => [
+                  styles.deleteButton,
+                  {
+                    borderColor: theme.colors.border,
+                    backgroundColor: theme.colors.surfaceSoft,
+                    opacity: deleting ? 0.45 : pressed ? 0.72 : 1,
+                  },
                 ]}
               >
-                {plant.category}
-                {plant.variety ? ` - ${plant.variety}` : ""}
-              </Text>
+                <Trash2 size={16} color={theme.colors.danger || theme.colors.primary} />
+              </Pressable>
             </View>
 
             <View style={styles.metaRow}>
@@ -264,7 +342,21 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   cardTitleText: {
+    flex: 1,
     gap: 4,
+  },
+  cardTopRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+  },
+  deleteButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   plantName: {
     fontSize: 18,
