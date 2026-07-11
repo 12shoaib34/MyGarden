@@ -43,16 +43,21 @@ export function DashboardHeader() {
   }
 
   return (
-    <AppHeader icon={UserRound} title={displayName} subtitle="Welcome back,">
+    <AppHeader
+      icon={UserRound}
+      imageUri={profile.avatarUri}
+      title={displayName}
+      subtitle="Welcome back,"
+    >
       <HeaderActionButton
-          onPress={toggleThemeMode}
-          accessibilityLabel="Toggle theme mode"
-        >
-          {isDarkMode ? (
-            <Sun size={21} color={theme.colors.primary} />
-          ) : (
-            <Moon size={21} color={theme.colors.primary} />
-          )}
+        onPress={toggleThemeMode}
+        accessibilityLabel="Toggle theme mode"
+      >
+        {isDarkMode ? (
+          <Sun size={21} color={theme.colors.primary} />
+        ) : (
+          <Moon size={21} color={theme.colors.primary} />
+        )}
       </HeaderActionButton>
     </AppHeader>
   );

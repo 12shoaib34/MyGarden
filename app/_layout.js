@@ -1,25 +1,50 @@
 import { Stack } from "expo-router";
-import * as NavigationBar from "expo-navigation-bar";
-import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { Platform } from "react-native";
+import { Platform, StatusBar as NativeStatusBar } from "react-native";
+import { SystemBars } from "react-native-edge-to-edge";
 import { AppProviders } from "../src/providers/AppProviders";
 import { useTheme } from "../src/theme/ThemeProvider";
 
 function RootStack() {
   const { theme } = useTheme();
+  const systemBarStyle = theme.mode === "dark" ? "light" : "dark";
 
   useEffect(() => {
     if (Platform.OS !== "android") {
       return;
     }
 
-    NavigationBar.setStyle(theme.mode === "dark" ? "light" : "dark");
-  }, [theme]);
+    NativeStatusBar.setBarStyle(
+      theme.mode === "dark" ? "light-content" : "dark-content",
+      true
+    );
+    NativeStatusBar.setBackgroundColor(theme.colors.background, true);
+    NativeStatusBar.setTranslucent(false);
+    SystemBars.setStyle({
+      statusBar: systemBarStyle,
+      navigationBar: systemBarStyle,
+    });
+
+    const systemBarsTimeout = setTimeout(() => {
+      SystemBars.setStyle({
+        statusBar: systemBarStyle,
+        navigationBar: systemBarStyle,
+      });
+    }, 250);
+
+    return () => {
+      clearTimeout(systemBarsTimeout);
+    };
+  }, [systemBarStyle, theme.colors.background]);
 
   return (
     <>
-      <StatusBar style={theme.mode === "dark" ? "light" : "dark"} />
+      <SystemBars
+        style={{
+          statusBar: systemBarStyle,
+          navigationBar: systemBarStyle,
+        }}
+      />
       <Stack
         screenOptions={{
           headerShown: false,

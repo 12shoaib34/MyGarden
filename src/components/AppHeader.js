@@ -1,9 +1,9 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { withHaptic } from "../services/hapticService";
 import { useTheme } from "../theme/ThemeProvider";
 
-export function AppHeader({ icon: Icon, title, subtitle, children, right }) {
+export function AppHeader({ icon: Icon, imageUri, title, subtitle, children, right }) {
   const { theme } = useTheme();
   const insets = useGetSafeAreaInsets();
   const actions = children ?? right;
@@ -19,8 +19,23 @@ export function AppHeader({ icon: Icon, title, subtitle, children, right }) {
         },
       ]}
     >
+      <View
+        pointerEvents="none"
+        style={[
+          styles.statusStrip,
+          {
+            height: insets.top,
+            backgroundColor:
+              theme.mode === "dark" ? theme.colors.text : theme.colors.background,
+          },
+        ]}
+      />
       <View style={[styles.iconBox, { backgroundColor: theme.colors.successSurface }]}>
-        <Icon size={21} color={theme.colors.primary} />
+        {imageUri ? (
+          <Image source={{ uri: imageUri }} style={styles.iconImage} />
+        ) : (
+          <Icon size={21} color={theme.colors.primary} />
+        )}
       </View>
       <View style={styles.textBlock}>
         <Text style={[styles.title, theme.typography.title, { color: theme.colors.text }]}>
@@ -71,6 +86,12 @@ export function HeaderActionButton({
 }
 
 const styles = StyleSheet.create({
+  statusStrip: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+  },
   header: {
     minHeight: 72,
     paddingHorizontal: 20,
@@ -86,6 +107,11 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
+  },
+  iconImage: {
+    width: "100%",
+    height: "100%",
   },
   textBlock: {
     flex: 1,
