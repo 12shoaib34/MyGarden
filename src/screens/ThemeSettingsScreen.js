@@ -3,6 +3,7 @@ import { Check, Moon, Palette, X } from "lucide-react-native";
 import { AppHeader, HeaderActionButton } from "../components/AppHeader";
 import { Card } from "../components/Card";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
+import { triggerHaptic, withHaptic } from "../services/hapticService";
 import { getThemeFamilyId, getThemeIdForFamilyMode, themeFamilies } from "../theme/themes";
 import { useTheme } from "../theme/ThemeProvider";
 
@@ -18,6 +19,7 @@ export function ThemeSettingsScreen({ onBack }) {
   }
 
   function toggleDarkMode(nextValue) {
+    triggerHaptic(nextValue ? "toggleOn" : "toggleOff");
     setThemeId(getThemeIdForFamilyMode(selectedFamilyId, nextValue ? "dark" : "light"));
   }
 
@@ -81,7 +83,7 @@ function ThemeFamilyButton({ family, selected, onPress }) {
   const themedStyles = createStyles(theme, useGetSafeAreaInsets());
 
   return (
-    <Pressable style={themedStyles.themeButton} onPress={onPress}>
+    <Pressable style={themedStyles.themeButton} onPress={withHaptic(onPress)}>
       <View style={themedStyles.paletteWrap}>
         <View style={themedStyles.paletteCircle}>
           {family.palette.map((color, index) => (

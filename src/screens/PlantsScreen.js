@@ -27,6 +27,7 @@ import { useAppDialog } from "../components/AppDialog";
 import { Card } from "../components/Card";
 import { Chip } from "../components/Chip";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
+import { withHaptic } from "../services/hapticService";
 import { autoExportBackup } from "../services/localBackupService";
 import { deletePlant, listPlants, setPlantFavorite } from "../storage/database";
 import { useTheme } from "../theme/ThemeProvider";
@@ -177,7 +178,7 @@ export function PlantsScreen({ onAddPlant, onEditPlant }) {
         </View>
         <Pressable
           style={themedStyles.addButton}
-          onPress={onAddPlant}
+          onPress={withHaptic(onAddPlant)}
           accessibilityRole="button"
           accessibilityLabel="Add plant"
         >
@@ -301,7 +302,7 @@ function PlantListCard({
   return (
     <Card style={styles.card}>
       <Pressable
-        onPress={plant.image_uri ? onViewImage : undefined}
+        onPress={plant.image_uri ? withHaptic(onViewImage) : undefined}
         disabled={!plant.image_uri}
         accessibilityRole={plant.image_uri ? "imagebutton" : "image"}
         accessibilityLabel={
@@ -333,7 +334,7 @@ function PlantListCard({
       </Pressable>
       <View style={styles.cardBody}>
         <Pressable
-          onPress={onPress}
+          onPress={withHaptic(onPress)}
           accessibilityRole="button"
           accessibilityLabel={`Edit ${plant.name}`}
           style={({ pressed }) => [
@@ -374,7 +375,7 @@ function PlantListCard({
       </View>
       <View style={styles.cardActions}>
         <Pressable
-          onPress={onToggleFavorite}
+          onPress={withHaptic(onToggleFavorite)}
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel={
@@ -398,7 +399,7 @@ function PlantListCard({
           />
         </Pressable>
         <Pressable
-          onPress={onDelete}
+          onPress={withHaptic(onDelete, "reject")}
           disabled={deleting}
           hitSlop={8}
           accessibilityRole="button"
@@ -443,7 +444,7 @@ function ImagePreviewModal({ plant, visible, onClose }) {
             </Text>
           </View>
           <Pressable
-            onPress={onClose}
+            onPress={withHaptic(onClose)}
             accessibilityRole="button"
             accessibilityLabel="Close image preview"
             hitSlop={8}

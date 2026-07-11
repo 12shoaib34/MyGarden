@@ -7,6 +7,7 @@ import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import { TextField } from "../components/TextField";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
+import { withHaptic } from "../services/hapticService";
 import {
   getDailyWaterReminderTime,
   sendTestWaterReminderNotification,
@@ -144,7 +145,7 @@ export function NotificationScheduleScreen({ onBack }) {
             {["AM", "PM"].map((item) => (
               <Pressable
                 key={item}
-                onPress={() => setPeriod(item)}
+                onPress={withHaptic(() => setPeriod(item))}
                 style={[
                   themedStyles.periodButton,
                   period === item && themedStyles.periodButtonSelected,

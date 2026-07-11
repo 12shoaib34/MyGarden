@@ -1,6 +1,7 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Leaf, Sprout } from 'lucide-react-native';
 import { Card } from './Card';
+import { withHaptic } from '../services/hapticService';
 import { useTheme } from '../theme/ThemeProvider';
 import { getPlantAgeLabel } from '../utils/plantAge';
 
@@ -8,7 +9,7 @@ export function PlantCard({ plant, onPress }) {
   const { theme } = useTheme();
 
   return (
-    <Pressable onPress={onPress}>
+    <Pressable onPress={withHaptic(onPress)}>
       {({ pressed }) => (
         <Card style={[styles.card, { opacity: pressed ? 0.82 : 1 }]}>
           <View style={[styles.imageBox, { backgroundColor: theme.colors.surfaceSoft }]}>

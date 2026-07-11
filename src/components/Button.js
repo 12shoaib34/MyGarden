@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { withHaptic } from '../services/hapticService';
 import { useTheme } from '../theme/ThemeProvider';
 
 export function Button({
@@ -16,7 +17,7 @@ export function Button({
   return (
     <Pressable
       disabled={disabled}
-      onPress={onPress}
+      onPress={withHaptic(onPress, variant === 'primary' ? 'confirm' : 'tap')}
       style={({ pressed }) => [
         styles.button,
         {

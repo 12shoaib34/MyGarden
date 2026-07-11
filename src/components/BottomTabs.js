@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { BookOpen, Home, Leaf, Settings } from "lucide-react-native";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
+import { withHaptic } from "../services/hapticService";
 import { useTheme } from "../theme/ThemeProvider";
 
 const tabs = [
@@ -36,7 +37,7 @@ export function BottomTabs({ active, onChange }) {
         return (
           <Pressable
             key={key}
-            onPress={() => onChange(key)}
+            onPress={withHaptic(() => onChange(key))}
             style={[
               styles.tabItem,
               focused && { backgroundColor: theme.colors.secondaryContainer },

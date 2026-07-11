@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useMemo, useRef, useState } fro
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { AlertTriangle, CheckCircle2, HelpCircle, Info, Trash2, XCircle } from "lucide-react-native";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
+import { withHaptic } from "../services/hapticService";
 import { useTheme } from "../theme/ThemeProvider";
 
 const AppDialogContext = createContext(null);
@@ -78,7 +79,7 @@ export function AppDialogProvider({ children }) {
               <View style={themedStyles.actions}>
                 {dialog.type === "confirm" ? (
                   <Pressable
-                    onPress={() => closeDialog(false)}
+                    onPress={withHaptic(() => closeDialog(false), "tap")}
                     style={({ pressed }) => [
                       themedStyles.actionButton,
                       themedStyles.secondaryButton,
@@ -89,7 +90,10 @@ export function AppDialogProvider({ children }) {
                   </Pressable>
                 ) : null}
                 <Pressable
-                  onPress={() => closeDialog(dialog.type === "confirm" ? true : undefined)}
+                  onPress={withHaptic(
+                    () => closeDialog(dialog.type === "confirm" ? true : undefined),
+                    dialog.destructive ? "reject" : "confirm"
+                  )}
                   style={({ pressed }) => [
                     themedStyles.actionButton,
                     dialog.destructive ? themedStyles.dangerButton : themedStyles.primaryButton,

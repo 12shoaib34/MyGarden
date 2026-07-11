@@ -16,6 +16,7 @@ import { Chip } from "../components/Chip";
 import { useAppDialog } from "../components/AppDialog";
 import { TextField } from "../components/TextField";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
+import { withHaptic } from "../services/hapticService";
 import { autoExportBackup, backupImageIfEnabled } from "../services/localBackupService";
 import { createPlant, deletePlant, updatePlant } from "../storage/database";
 import { useTheme } from "../theme/ThemeProvider";
@@ -182,7 +183,7 @@ export function AddPlantScreen({ plant, onCancel, onSaved }) {
         keyboardDismissMode="on-drag"
       >
         <Pressable
-          onPress={pickImage}
+          onPress={withHaptic(pickImage)}
           accessibilityRole="button"
           accessibilityLabel={imageUri ? "Change plant image" : "Add plant image"}
         >

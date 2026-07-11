@@ -13,6 +13,7 @@ import { Card } from "../components/Card";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { WeatherSummaryCard } from "../components/WeatherSummaryCard";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
+import { withHaptic } from "../services/hapticService";
 import { getSurjaniTownWeather } from "../services/weatherService";
 import { getDashboardStats, listFavoritePlants } from "../storage/database";
 import { useTheme } from "../theme/ThemeProvider";
@@ -127,7 +128,7 @@ export function HomeDashboardScreen({ onViewAllPlants }) {
         <View style={themedStyles.sectionHeader}>
           <Text style={themedStyles.sectionTitle}>My Garden</Text>
           <Pressable
-            onPress={onViewAllPlants}
+            onPress={withHaptic(onViewAllPlants)}
             hitSlop={12}
             style={({ pressed }) => [
               themedStyles.linkButton,

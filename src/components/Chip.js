@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
+import { withHaptic } from '../services/hapticService';
 import { useTheme } from '../theme/ThemeProvider';
 
 export function Chip({ label, selected, onPress, tone = 'primary' }) {
@@ -7,7 +8,7 @@ export function Chip({ label, selected, onPress, tone = 'primary' }) {
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={withHaptic(onPress)}
       style={[
         styles.chip,
         {

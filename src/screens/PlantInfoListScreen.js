@@ -6,6 +6,7 @@ import plantInfo from "../data/plantInfo.json";
 import { Chip } from "../components/Chip";
 import { bottomTabHeight } from "../components/BottomTabs";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
+import { withHaptic } from "../services/hapticService";
 import { useTheme } from "../theme/ThemeProvider";
 import { formatMonths, includesCurrentMonth } from "../utils/months";
 
@@ -95,7 +96,7 @@ function PlantInfoRow({ plant, onPress }) {
     : `Plant: ${formatMonths(plant.plantingMonths)}`;
 
   return (
-    <Pressable style={styles.row} onPress={onPress}>
+    <Pressable style={styles.row} onPress={withHaptic(onPress)}>
       <PlantTypeIcon category={plant.category} />
       <View style={styles.rowBody}>
         <View style={styles.rowTop}>

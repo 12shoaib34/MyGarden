@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
+import { withHaptic } from "../services/hapticService";
 import { useTheme } from "../theme/ThemeProvider";
 
 export function AppHeader({ icon: Icon, title, subtitle, children, right }) {
@@ -51,7 +52,7 @@ export function HeaderActionButton({
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={withHaptic(onPress, variant === "primary" ? "confirm" : "tap")}
       disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}

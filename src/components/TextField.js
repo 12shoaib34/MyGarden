@@ -1,5 +1,6 @@
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
+import { triggerHaptic } from '../services/hapticService';
 
 export function TextField({
   label,
@@ -12,6 +13,11 @@ export function TextField({
   onFocus,
 }) {
   const { theme } = useTheme();
+  const handleFocus = (event) => {
+    triggerHaptic();
+    onFocus?.(event);
+  };
+
   return (
     <View style={styles.wrap}>
       <Text style={[theme.typography.label, { color: theme.colors.textMuted }]}>{label}</Text>
@@ -23,7 +29,7 @@ export function TextField({
         keyboardType={keyboardType}
         maxLength={maxLength}
         multiline={multiline}
-        onFocus={onFocus}
+        onFocus={handleFocus}
         style={[
           styles.input,
           theme.typography.body,

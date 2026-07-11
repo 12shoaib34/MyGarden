@@ -9,6 +9,7 @@ import { Card } from "../components/Card";
 import { TextField } from "../components/TextField";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { autoExportBackup, backupImageIfEnabled } from "../services/localBackupService";
+import { withHaptic } from "../services/hapticService";
 import { getSetting, setSetting } from "../storage/database";
 import { useTheme } from "../theme/ThemeProvider";
 
@@ -92,7 +93,7 @@ export function ProfileScreen({ onBack }) {
 
       <ScrollView contentContainerStyle={themedStyles.scroll}>
         <Card style={themedStyles.profileCard}>
-          <Pressable style={themedStyles.profileImageBox} onPress={pickProfileImage}>
+          <Pressable style={themedStyles.profileImageBox} onPress={withHaptic(pickProfileImage)}>
             {avatarUri ? (
               <Image source={{ uri: avatarUri }} style={themedStyles.profileImage} />
             ) : (
