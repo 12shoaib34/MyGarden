@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { Check, Moon, Palette, X } from "lucide-react-native";
-import { AppHeader } from "../components/AppHeader";
+import { AppHeader, HeaderActionButton } from "../components/AppHeader";
 import { Card } from "../components/Card";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { getThemeFamilyId, getThemeIdForFamilyMode, themeFamilies } from "../theme/themes";
@@ -23,12 +23,9 @@ export function ThemeSettingsScreen({ onBack }) {
 
   return (
     <View style={themedStyles.screen}>
-      <AppHeader
-        icon={Palette}
-        title="Theme"
-        subtitle="Palette and dark mode"
-        right={<CloseButton onPress={onBack} />}
-      />
+      <AppHeader icon={Palette} title="Theme" subtitle="Palette and dark mode">
+        <CloseButton onPress={onBack} />
+      </AppHeader>
       <ScrollView contentContainerStyle={themedStyles.scroll}>
         <Card style={themedStyles.card}>
           <Text style={themedStyles.cardSubtitle}>
@@ -72,11 +69,10 @@ export function ThemeSettingsScreen({ onBack }) {
 
 function CloseButton({ onPress }) {
   const { theme } = useTheme();
-  const themedStyles = createStyles(theme, useGetSafeAreaInsets());
   return (
-    <Pressable style={themedStyles.headerIconButton} onPress={onPress}>
+    <HeaderActionButton onPress={onPress} accessibilityLabel="Close theme settings">
       <X size={19} color={theme.colors.text} />
-    </Pressable>
+    </HeaderActionButton>
   );
 }
 
@@ -115,16 +111,6 @@ function createStyles(theme, insets) {
       paddingHorizontal: 20,
       paddingTop: 20,
       paddingBottom: Math.max(insets.bottom, 24) + 24,
-    },
-    headerIconButton: {
-      width: 38,
-      height: 38,
-      borderRadius: 14,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.colors.surface,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
     },
     card: {
       padding: 24,

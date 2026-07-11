@@ -7,7 +7,7 @@ import {
   Settings,
   UserRound,
 } from "lucide-react-native";
-import { AppHeader } from "../components/AppHeader";
+import { AppHeader, HeaderActionButton } from "../components/AppHeader";
 import { Card } from "../components/Card";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { useTheme } from "../theme/ThemeProvider";
@@ -24,21 +24,11 @@ export function SettingsScreen({
 
   return (
     <View style={themedStyles.screen}>
-      <AppHeader
-        icon={Settings}
-        title="Settings"
-        subtitle="Theme, data, and reminders"
-        right={
-          <Pressable
-            style={themedStyles.headerIconButton}
-            onPress={onOpenProfile}
-            accessibilityRole="button"
-            accessibilityLabel="Open profile"
-          >
-            <UserRound size={19} color={theme.colors.primary} />
-          </Pressable>
-        }
-      />
+      <AppHeader icon={Settings} title="Settings" subtitle="Theme, data, and reminders">
+        <HeaderActionButton onPress={onOpenProfile} accessibilityLabel="Open profile">
+          <UserRound size={19} color={theme.colors.primary} />
+        </HeaderActionButton>
+      </AppHeader>
 
       <ScrollView contentContainerStyle={themedStyles.scroll}>
         <SettingsTile
@@ -97,16 +87,6 @@ function createStyles(theme, insets) {
       paddingTop: 20,
       paddingBottom: 132,
       gap: 14,
-    },
-    headerIconButton: {
-      width: 38,
-      height: 38,
-      borderRadius: 14,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.colors.surface,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
     },
     tile: {
       minHeight: 92,

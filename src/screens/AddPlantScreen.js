@@ -9,6 +9,7 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import { Camera, Check, ImagePlus, Sprout, Trash2, X } from "lucide-react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
+import { AppHeader, HeaderActionButton } from "../components/AppHeader";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import { Chip } from "../components/Chip";
@@ -153,32 +154,23 @@ export function AddPlantScreen({ plant, onCancel, onSaved }) {
 
   return (
     <View style={styles.screen}>
-      <View style={styles.header}>
-        <Pressable
-          style={styles.headerButton}
-          onPress={onCancel}
-          accessibilityRole="button"
-          accessibilityLabel="Close add plant"
-        >
+      <AppHeader
+        icon={Sprout}
+        title={isEditing ? "Edit Plant" : "Add Plant"}
+        subtitle="Saved offline on this mobile"
+      >
+        <HeaderActionButton onPress={onCancel} accessibilityLabel="Close plant form">
           <X size={22} color={theme.colors.text} />
-        </Pressable>
-        <View style={styles.headerText}>
-          <View style={styles.titleRow}>
-            <Sprout size={18} color={theme.colors.primary} />
-            <Text style={styles.title}>{isEditing ? "Edit Plant" : "Add Plant"}</Text>
-          </View>
-          <Text style={styles.subtitle}>Saved offline on this mobile</Text>
-        </View>
-        <Pressable
-          style={styles.saveIconButton}
+        </HeaderActionButton>
+        <HeaderActionButton
           onPress={savePlant}
           disabled={saving}
-          accessibilityRole="button"
           accessibilityLabel="Save plant"
+          variant="primary"
         >
           <Check size={22} color={theme.colors.onPrimary} />
-        </Pressable>
-      </View>
+        </HeaderActionButton>
+      </AppHeader>
 
       <KeyboardAwareScrollView
         bottomOffset={20}
@@ -362,51 +354,6 @@ function createStyles(theme, insets) {
     screen: {
       flex: 1,
       backgroundColor: theme.colors.background,
-    },
-    header: {
-      paddingTop: insets.contentTop,
-      paddingHorizontal: 20,
-      paddingBottom: 16,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: theme.colors.border,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 12,
-    },
-    headerButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 14,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.colors.surface,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-    },
-    saveIconButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 14,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.colors.primary,
-    },
-    headerText: {
-      flex: 1,
-    },
-    titleRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-    },
-    title: {
-      ...theme.typography.title,
-      color: theme.colors.text,
-    },
-    subtitle: {
-      ...theme.typography.bodySmall,
-      color: theme.colors.textMuted,
-      marginTop: 2,
     },
     scroll: {
       paddingHorizontal: 20,

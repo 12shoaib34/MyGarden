@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Database, Download, FolderOpen, Upload, X } from "lucide-react-native";
-import { AppHeader } from "../components/AppHeader";
+import { AppHeader, HeaderActionButton } from "../components/AppHeader";
 import { useAppDialog } from "../components/AppDialog";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
@@ -93,12 +93,9 @@ export function DataSettingsScreen({ onBack }) {
 
   return (
     <View style={themedStyles.screen}>
-      <AppHeader
-        icon={Database}
-        title="Data & Backup"
-        subtitle="Local data and backup folder"
-        right={<CloseButton onPress={onBack} />}
-      />
+      <AppHeader icon={Database} title="Data & Backup" subtitle="Local data and backup folder">
+        <CloseButton onPress={onBack} />
+      </AppHeader>
       <ScrollView contentContainerStyle={themedStyles.scroll}>
         <Card style={themedStyles.card}>
           <Text style={themedStyles.pageSubtitle}>
@@ -147,11 +144,10 @@ export function DataSettingsScreen({ onBack }) {
 
 function CloseButton({ onPress }) {
   const { theme } = useTheme();
-  const themedStyles = createStyles(theme, useGetSafeAreaInsets());
   return (
-    <Pressable style={themedStyles.headerIconButton} onPress={onPress}>
+    <HeaderActionButton onPress={onPress} accessibilityLabel="Close data settings">
       <X size={19} color={theme.colors.text} />
-    </Pressable>
+    </HeaderActionButton>
   );
 }
 
@@ -187,16 +183,6 @@ function createStyles(theme, insets) {
       paddingHorizontal: 20,
       paddingTop: 20,
       paddingBottom: Math.max(insets.bottom, 24) + 24,
-    },
-    headerIconButton: {
-      width: 38,
-      height: 38,
-      borderRadius: 14,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.colors.surface,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
     },
     card: {
       padding: 24,

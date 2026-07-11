@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Bell, Check, Clock, Send, X } from "lucide-react-native";
-import { AppHeader } from "../components/AppHeader";
+import { AppHeader, HeaderActionButton } from "../components/AppHeader";
 import { useAppDialog } from "../components/AppDialog";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
@@ -100,12 +100,9 @@ export function NotificationScheduleScreen({ onBack }) {
 
   return (
     <View style={themedStyles.screen}>
-      <AppHeader
-        icon={Bell}
-        title="Notification Schedule"
-        subtitle="Daily watering reminder"
-        right={<CloseButton onPress={onBack} />}
-      />
+      <AppHeader icon={Bell} title="Notification Schedule" subtitle="Daily watering reminder">
+        <CloseButton onPress={onBack} />
+      </AppHeader>
       <ScrollView contentContainerStyle={themedStyles.scroll}>
         <Card style={themedStyles.card}>
           <View style={themedStyles.timeHeader}>
@@ -190,11 +187,10 @@ export function NotificationScheduleScreen({ onBack }) {
 
 function CloseButton({ onPress }) {
   const { theme } = useTheme();
-  const themedStyles = createStyles(theme, useGetSafeAreaInsets());
   return (
-    <Pressable style={themedStyles.headerIconButton} onPress={onPress}>
+    <HeaderActionButton onPress={onPress} accessibilityLabel="Close notification schedule">
       <X size={19} color={theme.colors.text} />
-    </Pressable>
+    </HeaderActionButton>
   );
 }
 
@@ -230,16 +226,6 @@ function createStyles(theme, insets) {
       paddingHorizontal: 20,
       paddingTop: 20,
       paddingBottom: Math.max(insets.bottom, 24) + 24,
-    },
-    headerIconButton: {
-      width: 38,
-      height: 38,
-      borderRadius: 14,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.colors.surface,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
     },
     card: {
       padding: 24,

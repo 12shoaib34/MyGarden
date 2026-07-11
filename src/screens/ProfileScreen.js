@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Camera, Check, UserRound, X } from "lucide-react-native";
-import { AppHeader } from "../components/AppHeader";
+import { AppHeader, HeaderActionButton } from "../components/AppHeader";
 import { useAppDialog } from "../components/AppDialog";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
@@ -84,21 +84,11 @@ export function ProfileScreen({ onBack }) {
 
   return (
     <View style={themedStyles.screen}>
-      <AppHeader
-        icon={UserRound}
-        title="Profile"
-        subtitle="Name and profile image"
-        right={
-          <Pressable
-            style={themedStyles.headerIconButton}
-            onPress={onBack}
-            accessibilityRole="button"
-            accessibilityLabel="Close profile"
-          >
-            <X size={19} color={theme.colors.text} />
-          </Pressable>
-        }
-      />
+      <AppHeader icon={UserRound} title="Profile" subtitle="Name and profile image">
+        <HeaderActionButton onPress={onBack} accessibilityLabel="Close profile">
+          <X size={19} color={theme.colors.text} />
+        </HeaderActionButton>
+      </AppHeader>
 
       <ScrollView contentContainerStyle={themedStyles.scroll}>
         <Card style={themedStyles.profileCard}>
@@ -144,16 +134,6 @@ function createStyles(theme, insets) {
       paddingHorizontal: 20,
       paddingTop: 20,
       paddingBottom: Math.max(insets.bottom, 24) + 24,
-    },
-    headerIconButton: {
-      width: 38,
-      height: 38,
-      borderRadius: 14,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.colors.surface,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
     },
     profileCard: {
       padding: 24,

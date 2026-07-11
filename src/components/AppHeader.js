@@ -1,17 +1,18 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { useTheme } from "../theme/ThemeProvider";
 
-export function AppHeader({ icon: Icon, title, subtitle, right }) {
+export function AppHeader({ icon: Icon, title, subtitle, children, right }) {
   const { theme } = useTheme();
   const insets = useGetSafeAreaInsets();
+  const actions = children ?? right;
 
   return (
     <View
       style={[
         styles.header,
         {
-          paddingTop: insets.contentTop,
+          paddingTop: insets.top,
           borderBottomColor: theme.colors.border,
           backgroundColor: theme.colors.background,
         },
@@ -33,16 +34,46 @@ export function AppHeader({ icon: Icon, title, subtitle, right }) {
           </Text>
         ) : null}
       </View>
-      {right ? <View style={styles.right}>{right}</View> : null}
+      {actions ? <View style={styles.right}>{actions}</View> : null}
     </View>
+  );
+}
+
+export function HeaderActionButton({
+  children,
+  onPress,
+  disabled,
+  accessibilityLabel,
+  variant = "secondary",
+}) {
+  const { theme } = useTheme();
+  const isPrimary = variant === "primary";
+
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      style={({ pressed }) => [
+        styles.actionButton,
+        {
+          backgroundColor: isPrimary ? theme.colors.primary : theme.colors.surface,
+          borderColor: isPrimary ? theme.colors.primary : theme.colors.border,
+          opacity: disabled ? 0.5 : pressed ? 0.72 : 1,
+        },
+      ]}
+    >
+      {children}
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   header: {
-    minHeight: 74,
+    minHeight: 72,
     paddingHorizontal: 20,
-    paddingBottom: 12,
+    paddingBottom: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
     alignItems: "center",
@@ -68,5 +99,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+  },
+  actionButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
   },
 });

@@ -22,7 +22,7 @@ import {
   Trash2,
   X,
 } from "lucide-react-native";
-import { AppHeader } from "../components/AppHeader";
+import { AppHeader, HeaderActionButton } from "../components/AppHeader";
 import { useAppDialog } from "../components/AppDialog";
 import { Card } from "../components/Card";
 import { Chip } from "../components/Chip";
@@ -165,30 +165,25 @@ export function PlantsScreen({ onAddPlant, onEditPlant }) {
             ? `${plants.length} plants saved locally`
             : "Saved local plants will appear here"
         }
-        right={
-          <>
-            <Pressable
-              style={themedStyles.headerIconButton}
-              onPress={copyPlantsByCategory}
-              accessibilityRole="button"
-              accessibilityLabel="Copy plants by category"
-            >
-              <Copy size={18} color={theme.colors.primary} />
-            </Pressable>
-            <View style={themedStyles.countBadge}>
-              <Text style={themedStyles.countValue}>{plants.length}</Text>
-            </View>
-            <Pressable
-              style={themedStyles.addButton}
-              onPress={onAddPlant}
-              accessibilityRole="button"
-              accessibilityLabel="Add plant"
-            >
-              <Plus size={21} color={theme.colors.onPrimary} />
-            </Pressable>
-          </>
-        }
-      />
+      >
+        <HeaderActionButton
+          onPress={copyPlantsByCategory}
+          accessibilityLabel="Copy plants by category"
+        >
+          <Copy size={18} color={theme.colors.primary} />
+        </HeaderActionButton>
+        <View style={themedStyles.countBadge}>
+          <Text style={themedStyles.countValue}>{plants.length}</Text>
+        </View>
+        <Pressable
+          style={themedStyles.addButton}
+          onPress={onAddPlant}
+          accessibilityRole="button"
+          accessibilityLabel="Add plant"
+        >
+          <Plus size={21} color={theme.colors.onPrimary} />
+        </Pressable>
+      </AppHeader>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -620,16 +615,6 @@ function createStyles(theme, insets) {
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: theme.colors.primary,
-    },
-    headerIconButton: {
-      width: 38,
-      height: 38,
-      borderRadius: 14,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.colors.surface,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
     },
     countBadge: {
       minWidth: 38,

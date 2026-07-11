@@ -1,5 +1,6 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { ArrowLeft, CalendarDays, Flower2, Leaf, Scissors, ShieldAlert, Sprout, TreePine, Trees } from "lucide-react-native";
+import { AppHeader, HeaderActionButton } from "../components/AppHeader";
 import { bottomTabHeight } from "../components/BottomTabs";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { useTheme } from "../theme/ThemeProvider";
@@ -13,18 +14,11 @@ export function PlantInfoDetailScreen({ plant, onBack }) {
 
   return (
     <View style={styles.screen}>
-      <View style={styles.header}>
-        <Pressable style={styles.backButton} onPress={onBack}>
+      <AppHeader icon={Leaf} title={plant.name} subtitle={plant.botanicalName}>
+        <HeaderActionButton onPress={onBack} accessibilityLabel="Back to plant guide">
           <ArrowLeft size={22} color={theme.colors.text} />
-        </Pressable>
-        <View style={styles.headerText}>
-          <View style={styles.titleRow}>
-            <Leaf size={18} color={theme.colors.primary} />
-            <Text style={styles.headerTitle}>{plant.name}</Text>
-          </View>
-          <Text style={styles.headerSubtitle}>{plant.botanicalName}</Text>
-        </View>
-      </View>
+        </HeaderActionButton>
+      </AppHeader>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -249,43 +243,6 @@ function createStyles(theme, insets) {
     screen: {
       flex: 1,
       backgroundColor: theme.colors.background,
-    },
-    header: {
-      paddingTop: insets.contentTop,
-      paddingHorizontal: 20,
-      paddingBottom: 16,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: theme.colors.border,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 12,
-    },
-    backButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 14,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.colors.surface,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-    },
-    headerText: {
-      flex: 1,
-    },
-    titleRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-    },
-    headerTitle: {
-      ...theme.typography.title,
-      color: theme.colors.text,
-    },
-    headerSubtitle: {
-      ...theme.typography.bodySmall,
-      color: theme.colors.textMuted,
-      marginTop: 2,
     },
     scroll: {
       paddingHorizontal: 20,
