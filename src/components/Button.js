@@ -1,9 +1,17 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 
-export function Button({ title, onPress, variant = 'primary', disabled = false, style }) {
+export function Button({
+  title,
+  onPress,
+  variant = 'primary',
+  disabled = false,
+  style,
+  Icon,
+}) {
   const { theme } = useTheme();
   const isPrimary = variant === 'primary';
+  const labelColor = isPrimary ? theme.colors.onPrimary : theme.colors.primary;
 
   return (
     <Pressable
@@ -21,15 +29,18 @@ export function Button({ title, onPress, variant = 'primary', disabled = false, 
         style,
       ]}
     >
-      <Text
-        style={[
-          styles.label,
-          theme.typography.label,
-          { color: isPrimary ? theme.colors.onPrimary : theme.colors.primary },
-        ]}
-      >
-        {title}
-      </Text>
+      <View style={styles.content}>
+        {Icon ? <Icon size={18} color={labelColor} /> : null}
+        <Text
+          style={[
+            styles.label,
+            theme.typography.label,
+            { color: labelColor },
+          ]}
+        >
+          {title}
+        </Text>
+      </View>
     </Pressable>
   );
 }
@@ -41,6 +52,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     paddingHorizontal: 22,
+  },
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
   label: {
     textAlign: 'center',

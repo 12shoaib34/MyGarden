@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { BookOpen, Home, Leaf, UserRound } from "lucide-react-native";
+import { BookOpen, Home, Leaf, Settings } from "lucide-react-native";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { useTheme } from "../theme/ThemeProvider";
 
@@ -7,7 +7,7 @@ const tabs = [
   ["home", "Home", Home],
   ["plants", "My Plants", Leaf],
   ["info", "Plant Info", BookOpen],
-  ["settings", "Profile", UserRound],
+  ["settings", "Settings", Settings],
 ];
 
 export const bottomTabHeight = 110;

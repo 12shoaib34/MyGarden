@@ -1,6 +1,20 @@
+import { useCallback, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
 import { HomeDashboardScreen } from "../../src/screens/HomeDashboardScreen";
-import { router } from "expo-router";
 
 export default function HomeRoute() {
-  return <HomeDashboardScreen onViewAllPlants={() => router.navigate("/(tabs)/plants")} />;
+  const [focusVersion, setFocusVersion] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      setFocusVersion((version) => version + 1);
+    }, [])
+  );
+
+  return (
+    <HomeDashboardScreen
+      key={focusVersion}
+      onViewAllPlants={() => router.navigate("/(tabs)/plants")}
+    />
+  );
 }

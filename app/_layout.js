@@ -31,6 +31,10 @@ function RootStack() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="add" />
         <Stack.Screen name="edit-plant/[id]" />
+        <Stack.Screen name="profile" />
+        <Stack.Screen name="settings-theme" />
+        <Stack.Screen name="settings-data" />
+        <Stack.Screen name="notification-schedule" />
         <Stack.Screen name="plant-info/[id]" />
       </Stack>
     </>

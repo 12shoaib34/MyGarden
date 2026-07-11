@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-export const GLOBAL_SAFE_AREA_TOP_OFFSET = 14;
+export const GLOBAL_SAFE_AREA_TOP_OFFSET = 8;
 export const GLOBAL_SAFE_AREA_BOTTOM_OFFSET = 8;
 export const GLOBAL_CONTENT_TOP_OFFSET = 24;
 

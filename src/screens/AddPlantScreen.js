@@ -7,7 +7,7 @@ import {
   View,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { Camera, Check, ImagePlus, Sprout, X } from "lucide-react-native";
+import { Camera, Check, ImagePlus, Sprout, Trash2, X } from "lucide-react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
@@ -35,13 +35,13 @@ export function AddPlantScreen({ plant, onCancel, onSaved }) {
   const insets = useGetSafeAreaInsets();
   const styles = createStyles(theme, insets);
   const isEditing = Boolean(plant?.id);
+  const initialDateParts = getDateParts(plant?.purchase_date);
   const [name, setName] = useState(plant?.name || "");
-  const [variety, setVariety] = useState(plant?.variety || "Normal");
+  const [variety, setVariety] = useState(plant?.variety || "");
   const [category, setCategory] = useState(plant?.category || "Vegetable");
-  const [purchaseDate, setPurchaseDate] = useState(
-    plant?.purchase_date || new Date().toISOString().slice(0, 10),
-  );
-  const [notes, setNotes] = useState(plant?.notes || "");
+  const [dateYear, setDateYear] = useState(initialDateParts.year);
+  const [dateMonth, setDateMonth] = useState(initialDateParts.month);
+  const [dateDay, setDateDay] = useState(initialDateParts.day);
   const [imageUri, setImageUri] = useState(plant?.image_uri || "");
   const [saving, setSaving] = useState(false);
 
@@ -78,6 +78,16 @@ export function AddPlantScreen({ plant, onCancel, onSaved }) {
       return;
     }
 
+    const purchaseDate = buildPurchaseDate(dateYear, dateMonth, dateDay);
+    if (!purchaseDate) {
+      await showDialog({
+        title: "Date invalid",
+        message: "Please enter a valid planted date.",
+        variant: "warning",
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       const backedUpImageUri = await backupImageIfEnabled(imageUri);
@@ -88,7 +98,7 @@ export function AddPlantScreen({ plant, onCancel, onSaved }) {
         purchaseDate,
         healthStatus: plant?.health_status || "Healthy",
         imageUri: backedUpImageUri,
-        notes,
+        notes: "",
         waterEveryDays: plant?.water_every_days || "2",
         fertilizerEveryDays: plant?.fertilizer_every_days || "15",
       };
@@ -179,26 +189,38 @@ export function AddPlantScreen({ plant, onCancel, onSaved }) {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
       >
-        <Pressable onPress={pickImage}>
-          <Card style={styles.imageCard}>
-            <View
-              style={[
-                styles.imageBox,
-                { backgroundColor: theme.colors.surfaceSoft },
-              ]}
-            >
-              {imageUri ? (
-                <Image source={{ uri: imageUri }} style={styles.image} />
-              ) : (
-                <Camera size={34} color={theme.colors.primary} />
-              )}
-            </View>
-            <Button
-              title={imageUri ? "Change Image" : "Optional Image"}
-              variant="secondary"
-              onPress={pickImage}
-            />
-          </Card>
+        <Pressable
+          onPress={pickImage}
+          accessibilityRole="button"
+          accessibilityLabel={imageUri ? "Change plant image" : "Add plant image"}
+        >
+          {({ pressed }) => (
+            <Card style={[styles.imageCard, { opacity: pressed ? 0.86 : 1 }]}>
+              <View
+                style={[
+                  styles.imageBox,
+                  { backgroundColor: theme.colors.surfaceSoft },
+                ]}
+              >
+                {imageUri ? (
+                  <Image source={{ uri: imageUri }} style={styles.image} />
+                ) : (
+                  <View style={styles.imagePlaceholder}>
+                    <View style={styles.cameraBadge}>
+                      <Camera size={30} color={theme.colors.primary} />
+                    </View>
+                    <Text style={styles.imageTitle}>Plant Photo</Text>
+                  </View>
+                )}
+                <View style={styles.imagePill}>
+                  <ImagePlus size={15} color={theme.colors.primary} />
+                  <Text style={styles.imagePillText}>
+                    {imageUri ? "Change" : "Add"}
+                  </Text>
+                </View>
+              </View>
+            </Card>
+          )}
         </Pressable>
 
         <View style={styles.form}>
@@ -212,7 +234,7 @@ export function AddPlantScreen({ plant, onCancel, onSaved }) {
             label="Variety"
             value={variety}
             onChangeText={setVariety}
-            placeholder="Normal"
+            placeholder="Variety name"
           />
 
           <Text style={styles.fieldLabel}>Category</Text>
@@ -227,33 +249,62 @@ export function AddPlantScreen({ plant, onCancel, onSaved }) {
             ))}
           </View>
 
-          <TextField
-            label="Date Planted"
-            value={purchaseDate}
-            onChangeText={setPurchaseDate}
-            placeholder="YYYY-MM-DD"
-          />
-          <TextField
-            label="Notes (Optional)"
-            value={notes}
-            onChangeText={setNotes}
-            multiline
-          />
+          <View style={styles.dateGroup}>
+            <Text style={styles.fieldLabel}>Date Planted</Text>
+            <View style={styles.row}>
+              <View style={styles.rowItem}>
+                <TextField
+                  label="Year"
+                  value={dateYear}
+                  onChangeText={(text) => setDateYear(toDigits(text, 4))}
+                  placeholder="YYYY"
+                  keyboardType="number-pad"
+                  maxLength={4}
+                />
+              </View>
+              <View style={styles.rowItem}>
+                <TextField
+                  label="Month"
+                  value={dateMonth}
+                  onChangeText={(text) => setDateMonth(toDigits(text, 2))}
+                  placeholder="MM"
+                  keyboardType="number-pad"
+                  maxLength={2}
+                />
+              </View>
+              <View style={styles.rowItem}>
+                <TextField
+                  label="Day"
+                  value={dateDay}
+                  onChangeText={(text) => setDateDay(toDigits(text, 2))}
+                  placeholder="DD"
+                  keyboardType="number-pad"
+                  maxLength={2}
+                />
+              </View>
+            </View>
+          </View>
         </View>
 
-        <Button
-          title={saving ? "Saving..." : isEditing ? "Update Plant" : "Save Plant"}
-          onPress={savePlant}
-          disabled={saving}
-        />
-        {isEditing ? (
+        <View style={styles.actionRow}>
           <Button
-            title="Delete Plant"
-            variant="secondary"
-            onPress={confirmDeletePlant}
+            title={saving ? "Saving..." : isEditing ? "Update" : "Save"}
+            onPress={savePlant}
             disabled={saving}
+            Icon={Check}
+            style={styles.actionButton}
           />
-        ) : null}
+          {isEditing ? (
+            <Button
+              title="Delete"
+              variant="secondary"
+              onPress={confirmDeletePlant}
+              disabled={saving}
+              Icon={Trash2}
+              style={styles.actionButton}
+            />
+          ) : null}
+        </View>
         <View style={styles.localNote}>
           <ImagePlus size={18} color={theme.colors.textMuted} />
           <Text style={styles.localText}>
@@ -263,6 +314,47 @@ export function AddPlantScreen({ plant, onCancel, onSaved }) {
       </KeyboardAwareScrollView>
     </View>
   );
+}
+
+function getDateParts(value) {
+  const fallback = new Date().toISOString().slice(0, 10);
+  const [year, month, day] = String(value || fallback).split("-");
+  return {
+    year: year || "",
+    month: month || "",
+    day: day || "",
+  };
+}
+
+function toDigits(value, maxLength) {
+  return String(value || "").replace(/\D/g, "").slice(0, maxLength);
+}
+
+function buildPurchaseDate(yearValue, monthValue, dayValue) {
+  const year = toDigits(yearValue, 4);
+  const month = toDigits(monthValue, 2).padStart(2, "0");
+  const day = toDigits(dayValue, 2).padStart(2, "0");
+  if (year.length !== 4 || month.length !== 2 || day.length !== 2) {
+    return "";
+  }
+
+  const monthNumber = Number(month);
+  const dayNumber = Number(day);
+  if (monthNumber < 1 || monthNumber > 12 || dayNumber < 1 || dayNumber > 31) {
+    return "";
+  }
+
+  const candidate = new Date(`${year}-${month}-${day}T00:00:00.000Z`);
+  if (
+    Number.isNaN(candidate.getTime()) ||
+    candidate.getUTCFullYear() !== Number(year) ||
+    candidate.getUTCMonth() + 1 !== monthNumber ||
+    candidate.getUTCDate() !== dayNumber
+  ) {
+    return "";
+  }
+
+  return `${year}-${month}-${day}`;
 }
 
 function createStyles(theme, insets) {
@@ -323,8 +415,7 @@ function createStyles(theme, insets) {
       gap: 16,
     },
     imageCard: {
-      padding: 16,
-      gap: 14,
+      padding: 12,
     },
     imageBox: {
       height: 170,
@@ -336,6 +427,41 @@ function createStyles(theme, insets) {
     image: {
       width: "100%",
       height: "100%",
+    },
+    imagePlaceholder: {
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 10,
+    },
+    cameraBadge: {
+      width: 58,
+      height: 58,
+      borderRadius: 20,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.colors.successSurface,
+    },
+    imageTitle: {
+      ...theme.typography.title,
+      color: theme.colors.text,
+    },
+    imagePill: {
+      position: "absolute",
+      right: 12,
+      bottom: 12,
+      minHeight: 34,
+      borderRadius: 13,
+      paddingHorizontal: 12,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    imagePillText: {
+      ...theme.typography.label,
+      color: theme.colors.primary,
     },
     sectionTitle: {
       ...theme.typography.title,
@@ -354,12 +480,23 @@ function createStyles(theme, insets) {
     form: {
       gap: 16,
     },
+    dateGroup: {
+      gap: 8,
+    },
     row: {
       flexDirection: "row",
-      gap: 14,
+      gap: 10,
     },
     rowItem: {
       flex: 1,
+    },
+    actionRow: {
+      flexDirection: "row",
+      gap: 12,
+    },
+    actionButton: {
+      flex: 1,
+      paddingHorizontal: 14,
     },
     localNote: {
       flexDirection: "row",

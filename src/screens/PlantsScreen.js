@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Image,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -9,14 +10,25 @@ import {
   View,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
-import { Copy, Leaf, Plus, Search, SlidersHorizontal, Sprout, Trash2 } from "lucide-react-native";
+import {
+  Copy,
+  Leaf,
+  Maximize2,
+  Plus,
+  Search,
+  SlidersHorizontal,
+  Sprout,
+  Star,
+  Trash2,
+  X,
+} from "lucide-react-native";
 import { AppHeader } from "../components/AppHeader";
 import { useAppDialog } from "../components/AppDialog";
 import { Card } from "../components/Card";
 import { Chip } from "../components/Chip";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { autoExportBackup } from "../services/localBackupService";
-import { deletePlant, listPlants } from "../storage/database";
+import { deletePlant, listPlants, setPlantFavorite } from "../storage/database";
 import { useTheme } from "../theme/ThemeProvider";
 import { getPlantAgeLabel } from "../utils/plantAge";
 
@@ -31,6 +43,7 @@ export function PlantsScreen({ onAddPlant, onEditPlant }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("All");
   const [deletingPlantId, setDeletingPlantId] = useState(null);
+  const [previewPlant, setPreviewPlant] = useState(null);
 
   useEffect(() => {
     let alive = true;
@@ -116,6 +129,32 @@ export function PlantsScreen({ onAddPlant, onEditPlant }) {
     }
   }
 
+  async function toggleFavoritePlant(plant) {
+    const nextFavorite = plant.is_favorite ? 0 : 1;
+
+    setPlants((currentPlants) =>
+      currentPlants.map((item) =>
+        item.id === plant.id ? { ...item, is_favorite: nextFavorite } : item
+      )
+    );
+
+    try {
+      await setPlantFavorite(plant.id, nextFavorite);
+      await autoExportBackup();
+    } catch (error) {
+      setPlants((currentPlants) =>
+        currentPlants.map((item) =>
+          item.id === plant.id ? { ...item, is_favorite: plant.is_favorite ? 1 : 0 } : item
+        )
+      );
+      await showDialog({
+        title: "Favorite failed",
+        message: error.message,
+        variant: "error",
+      });
+    }
+  }
+
   return (
     <View style={themedStyles.screen}>
       <AppHeader
@@ -194,6 +233,8 @@ export function PlantsScreen({ onAddPlant, onEditPlant }) {
                 key={plant.id}
                 plant={plant}
                 onPress={() => onEditPlant?.(plant)}
+                onViewImage={() => setPreviewPlant(plant)}
+                onToggleFavorite={() => toggleFavoritePlant(plant)}
                 onDelete={() => confirmDeletePlant(plant)}
                 deleting={deletingPlantId === plant.id}
               />
@@ -211,6 +252,12 @@ export function PlantsScreen({ onAddPlant, onEditPlant }) {
           )}
         </View>
       </ScrollView>
+
+      <ImagePreviewModal
+        plant={previewPlant}
+        visible={Boolean(previewPlant)}
+        onClose={() => setPreviewPlant(null)}
+      />
     </View>
   );
 }
@@ -245,76 +292,186 @@ function comparePlantsByName(firstPlant, secondPlant) {
   });
 }
 
-function PlantListCard({ plant, onPress, onDelete, deleting }) {
+function PlantListCard({
+  plant,
+  onPress,
+  onViewImage,
+  onToggleFavorite,
+  onDelete,
+  deleting,
+}) {
   const { theme } = useTheme();
+  const isFavorite = Boolean(plant.is_favorite);
 
   return (
-    <Pressable onPress={onPress}>
-      {({ pressed }) => (
-        <Card style={[styles.card, { opacity: pressed ? 0.86 : 1 }]}>
-          <View
-            style={[
-              styles.imageBox,
-              { backgroundColor: theme.colors.surfaceSoft },
+    <Card style={styles.card}>
+      <Pressable
+        onPress={plant.image_uri ? onViewImage : undefined}
+        disabled={!plant.image_uri}
+        accessibilityRole={plant.image_uri ? "imagebutton" : "image"}
+        accessibilityLabel={
+          plant.image_uri ? `View ${plant.name} image` : `${plant.name} has no image`
+        }
+        style={({ pressed }) => [
+          styles.imageBox,
+          {
+            backgroundColor: theme.colors.surfaceSoft,
+            opacity: pressed ? 0.82 : 1,
+          },
+        ]}
+      >
+        {plant.image_uri ? (
+          <>
+            <Image source={{ uri: plant.image_uri }} style={styles.image} />
+            <View
+              style={[
+                styles.viewImageBadge,
+                { backgroundColor: theme.colors.surface },
+              ]}
+            >
+              <Maximize2 size={13} color={theme.colors.primary} />
+            </View>
+          </>
+        ) : (
+          <Sprout size={30} color={theme.colors.primary} />
+        )}
+      </Pressable>
+      <View style={styles.cardBody}>
+        <Pressable
+          onPress={onPress}
+          accessibilityRole="button"
+          accessibilityLabel={`Edit ${plant.name}`}
+          style={({ pressed }) => [
+            styles.cardDetailsButton,
+            { opacity: pressed ? 0.76 : 1 },
+          ]}
+        >
+          <View style={styles.cardTopRow}>
+            <View style={styles.cardTitleText}>
+              <Text
+                style={[styles.plantName, { color: theme.colors.text }]}
+                numberOfLines={2}
+              >
+                {plant.name}
+              </Text>
+              <Text
+                style={[
+                  theme.typography.bodySmall,
+                  { color: theme.colors.textMuted },
+                ]}
+                numberOfLines={1}
+              >
+                {plant.category}
+                {plant.variety ? ` - ${plant.variety}` : ""}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.metaRow}>
+            <View style={styles.metaItem}>
+              <Leaf size={16} color={theme.colors.primary} />
+              <Text style={[styles.metaText, { color: theme.colors.textMuted }]}>
+                {getPlantAgeLabel(plant.purchase_date)}
+              </Text>
+            </View>
+          </View>
+        </Pressable>
+      </View>
+      <View style={styles.cardActions}>
+        <Pressable
+          onPress={onToggleFavorite}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={
+            isFavorite ? `Remove ${plant.name} from favorites` : `Add ${plant.name} to favorites`
+          }
+          style={({ pressed }) => [
+            styles.cardActionButton,
+            {
+              borderColor: isFavorite ? theme.colors.primary : theme.colors.border,
+              backgroundColor: isFavorite
+                ? theme.colors.successSurface
+                : theme.colors.surfaceSoft,
+              opacity: pressed ? 0.72 : 1,
+            },
+          ]}
+        >
+          <Star
+            size={16}
+            color={theme.colors.primary}
+            fill={isFavorite ? theme.colors.primary : "transparent"}
+          />
+        </Pressable>
+        <Pressable
+          onPress={onDelete}
+          disabled={deleting}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={`Delete ${plant.name}`}
+          style={({ pressed }) => [
+            styles.cardActionButton,
+            {
+              borderColor: theme.colors.border,
+              backgroundColor: theme.colors.surfaceSoft,
+              opacity: deleting ? 0.45 : pressed ? 0.72 : 1,
+            },
+          ]}
+        >
+          <Trash2 size={16} color={theme.colors.danger || theme.colors.primary} />
+        </Pressable>
+      </View>
+    </Card>
+  );
+}
+
+function ImagePreviewModal({ plant, visible, onClose }) {
+  const { theme } = useTheme();
+  const insets = useGetSafeAreaInsets();
+  const previewStyles = createImagePreviewStyles(theme, insets);
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
+      <View style={previewStyles.overlay}>
+        <View style={previewStyles.header}>
+          <View style={previewStyles.titleWrap}>
+            <Text style={previewStyles.title} numberOfLines={1}>
+              {plant?.name || "Plant image"}
+            </Text>
+            <Text style={previewStyles.subtitle} numberOfLines={1}>
+              {plant?.category || "My Plants"}
+            </Text>
+          </View>
+          <Pressable
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Close image preview"
+            hitSlop={8}
+            style={({ pressed }) => [
+              previewStyles.closeButton,
+              { opacity: pressed ? 0.72 : 1 },
             ]}
           >
-            {plant.image_uri ? (
-              <Image source={{ uri: plant.image_uri }} style={styles.image} />
-            ) : (
-              <Sprout size={30} color={theme.colors.primary} />
-            )}
-          </View>
-          <View style={styles.cardBody}>
-            <View style={styles.cardTopRow}>
-              <View style={styles.cardTitleText}>
-                <Text
-                  style={[styles.plantName, { color: theme.colors.text }]}
-                  numberOfLines={2}
-                >
-                  {plant.name}
-                </Text>
-                <Text
-                  style={[
-                    theme.typography.bodySmall,
-                    { color: theme.colors.textMuted },
-                  ]}
-                  numberOfLines={1}
-                >
-                  {plant.category}
-                  {plant.variety ? ` - ${plant.variety}` : ""}
-                </Text>
-              </View>
-              <Pressable
-                onPress={onDelete}
-                disabled={deleting}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityLabel={`Delete ${plant.name}`}
-                style={({ pressed }) => [
-                  styles.deleteButton,
-                  {
-                    borderColor: theme.colors.border,
-                    backgroundColor: theme.colors.surfaceSoft,
-                    opacity: deleting ? 0.45 : pressed ? 0.72 : 1,
-                  },
-                ]}
-              >
-                <Trash2 size={16} color={theme.colors.danger || theme.colors.primary} />
-              </Pressable>
-            </View>
+            <X size={22} color={theme.colors.text} />
+          </Pressable>
+        </View>
 
-            <View style={styles.metaRow}>
-              <View style={styles.metaItem}>
-                <Leaf size={16} color={theme.colors.primary} />
-                <Text style={[styles.metaText, { color: theme.colors.textMuted }]}>
-                  {getPlantAgeLabel(plant.purchase_date)}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </Card>
-      )}
-    </Pressable>
+        <View style={previewStyles.imageStage}>
+          {plant?.image_uri ? (
+            <Image
+              source={{ uri: plant.image_uri }}
+              style={previewStyles.previewImage}
+              resizeMode="contain"
+            />
+          ) : null}
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -336,10 +493,24 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
+  viewImageBadge: {
+    position: "absolute",
+    right: 8,
+    bottom: 8,
+    width: 26,
+    height: 26,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   cardBody: {
     flex: 1,
     justifyContent: "space-between",
     paddingVertical: 4,
+  },
+  cardDetailsButton: {
+    flex: 1,
+    justifyContent: "space-between",
   },
   cardTitleText: {
     flex: 1,
@@ -350,7 +521,10 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: 10,
   },
-  deleteButton: {
+  cardActions: {
+    gap: 8,
+  },
+  cardActionButton: {
     width: 34,
     height: 34,
     borderRadius: 12,
@@ -379,6 +553,59 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
+
+function createImagePreviewStyles(theme, insets) {
+  return StyleSheet.create({
+    overlay: {
+      flex: 1,
+      paddingTop: Math.max(insets.top, 18),
+      paddingBottom: Math.max(insets.bottom, 18),
+      backgroundColor: "rgba(0, 0, 0, 0.92)",
+    },
+    header: {
+      minHeight: 68,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      paddingHorizontal: 18,
+    },
+    titleWrap: {
+      flex: 1,
+      gap: 2,
+    },
+    title: {
+      fontSize: 20,
+      lineHeight: 26,
+      fontWeight: "800",
+      color: "#FFFFFF",
+    },
+    subtitle: {
+      ...theme.typography.bodySmall,
+      color: "rgba(255, 255, 255, 0.72)",
+    },
+    closeButton: {
+      width: 42,
+      height: 42,
+      borderRadius: 15,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.surface,
+    },
+    imageStage: {
+      flex: 1,
+      paddingHorizontal: 12,
+      paddingBottom: 12,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    previewImage: {
+      width: "100%",
+      height: "100%",
+    },
+  });
+}
 
 function createStyles(theme, insets) {
   return StyleSheet.create({

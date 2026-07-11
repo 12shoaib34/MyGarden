@@ -62,6 +62,7 @@ async function migrate(db) {
       notes TEXT,
       water_every_days INTEGER NOT NULL DEFAULT 2,
       fertilizer_every_days INTEGER NOT NULL DEFAULT 15,
+      is_favorite INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL
     );
     CREATE TABLE IF NOT EXISTS settings (
@@ -69,7 +70,15 @@ async function migrate(db) {
       value TEXT NOT NULL
     );
   `);
+  await ensureColumn(db, 'plants', 'is_favorite', 'INTEGER NOT NULL DEFAULT 0');
   await removeDuplicatePlants(db);
+}
+
+async function ensureColumn(db, tableName, columnName, definition) {
+  const columns = await db.getAllAsync(`PRAGMA table_info(${tableName})`);
+  if (!columns.some((column) => column.name === columnName)) {
+    await db.execAsync(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`);
+  }
 }
 
 export async function getSetting(key, fallback) {
@@ -186,8 +195,8 @@ export async function importPlants(plants = []) {
 
       await db.runAsync(
         `INSERT INTO plants
-          (name, variety, category, purchase_date, health_status, image_uri, notes, water_every_days, fertilizer_every_days, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          (name, variety, category, purchase_date, health_status, image_uri, notes, water_every_days, fertilizer_every_days, is_favorite, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           normalizedPlant.name,
           normalizedPlant.variety,
@@ -198,6 +207,7 @@ export async function importPlants(plants = []) {
           normalizedPlant.notes,
           normalizedPlant.water_every_days,
           normalizedPlant.fertilizer_every_days,
+          normalizedPlant.is_favorite,
           normalizedPlant.created_at,
         ]
       );
@@ -239,6 +249,7 @@ function normalizeImportedPlant(plant = {}) {
     notes: String(plant.notes || '').trim(),
     water_every_days: Number(plant.water_every_days || plant.waterEveryDays) || 2,
     fertilizer_every_days: Number(plant.fertilizer_every_days || plant.fertilizerEveryDays) || 15,
+    is_favorite: plant.is_favorite || plant.isFavorite ? 1 : 0,
     created_at: plant.created_at || now,
   };
 }
@@ -268,6 +279,24 @@ export async function listLatestPlants(limit = 5) {
     db.getAllAsync(
       'SELECT * FROM plants ORDER BY id DESC LIMIT ?',
       [Number(limit) || 5]
+    )
+  );
+}
+
+export async function listFavoritePlants(limit = 5) {
+  return runDatabaseOperation((db) =>
+    db.getAllAsync(
+      'SELECT * FROM plants WHERE is_favorite = 1 ORDER BY name COLLATE NOCASE ASC, created_at DESC LIMIT ?',
+      [Number(limit) || 5]
+    )
+  );
+}
+
+export async function setPlantFavorite(id, isFavorite) {
+  await runDatabaseOperation((db) =>
+    db.runAsync(
+      'UPDATE plants SET is_favorite = ? WHERE id = ?',
+      [isFavorite ? 1 : 0, Number(id)]
     )
   );
 }

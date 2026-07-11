@@ -14,7 +14,7 @@ import { DashboardHeader } from "../components/DashboardHeader";
 import { WeatherSummaryCard } from "../components/WeatherSummaryCard";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { getSurjaniTownWeather } from "../services/weatherService";
-import { getDashboardStats, listLatestPlants } from "../storage/database";
+import { getDashboardStats, listFavoritePlants } from "../storage/database";
 import { useTheme } from "../theme/ThemeProvider";
 import { getPlantAgeLabel } from "../utils/plantAge";
 
@@ -38,7 +38,7 @@ export function HomeDashboardScreen({ onViewAllPlants }) {
     async function load() {
       const [nextStats, nextPlants, nextWeather] = await Promise.all([
         getDashboardStats(),
-        listLatestPlants(5),
+        listFavoritePlants(5),
         getSurjaniTownWeather(),
       ]);
 
@@ -62,7 +62,7 @@ export function HomeDashboardScreen({ onViewAllPlants }) {
     try {
       const [nextStats, nextPlants, nextWeather] = await Promise.all([
         getDashboardStats(),
-        listLatestPlants(5),
+        listFavoritePlants(5),
         getSurjaniTownWeather({ forceRefresh: true }),
       ]);
 
@@ -152,9 +152,9 @@ export function HomeDashboardScreen({ onViewAllPlants }) {
               <View style={themedStyles.emptyIcon}>
                 <Sprout size={28} color={theme.colors.primary} />
               </View>
-              <Text style={themedStyles.emptyTitle}>No plants added</Text>
+              <Text style={themedStyles.emptyTitle}>No favorite plants</Text>
               <Text style={themedStyles.emptyBody}>
-                Add plants from My Plants to see them here.
+                Mark plants as favorite from My Plants to see them here.
               </Text>
             </Card>
           )}

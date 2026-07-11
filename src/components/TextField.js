@@ -7,6 +7,7 @@ export function TextField({
   onChangeText,
   placeholder,
   keyboardType,
+  maxLength,
   multiline,
   onFocus,
 }) {
@@ -20,6 +21,7 @@ export function TextField({
         placeholder={placeholder}
         placeholderTextColor={theme.colors.textMuted}
         keyboardType={keyboardType}
+        maxLength={maxLength}
         multiline={multiline}
         onFocus={onFocus}
         style={[
