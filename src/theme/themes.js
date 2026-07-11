@@ -528,6 +528,178 @@ themes.indigoDark = {
   },
 };
 
+themes.oceanLight = {
+  ...themes.skyLight,
+  id: 'oceanLight',
+  name: 'Ocean',
+  colors: {
+    ...themes.skyLight.colors,
+    primary: '#0284C7',
+    primaryStrong: '#075985',
+    secondary: '#22D3EE',
+    secondaryContainer: '#CFFAFE',
+    water: '#0284C7',
+    info: '#0284C7',
+    beige: '#ECFEFF',
+  },
+};
+
+themes.oceanDark = {
+  ...themes.skyDark,
+  id: 'oceanDark',
+  name: 'Ocean',
+  colors: {
+    ...themes.skyDark.colors,
+    primary: '#67E8F9',
+    primaryStrong: '#A5F3FC',
+    secondary: '#38BDF8',
+    secondaryContainer: '#164E63',
+    water: '#67E8F9',
+    info: '#67E8F9',
+    beige: '#14262B',
+  },
+};
+
+themes.orchidLight = {
+  ...themes.berryLight,
+  id: 'orchidLight',
+  name: 'Orchid',
+  colors: {
+    ...themes.berryLight.colors,
+    primary: '#9333EA',
+    primaryStrong: '#6B21A8',
+    secondary: '#C084FC',
+    secondaryContainer: '#F3E8FF',
+    beige: '#FAF5FF',
+  },
+};
+
+themes.orchidDark = {
+  ...themes.berryDark,
+  id: 'orchidDark',
+  name: 'Orchid',
+  colors: {
+    ...themes.berryDark.colors,
+    primary: '#D8B4FE',
+    primaryStrong: '#E9D5FF',
+    secondary: '#C084FC',
+    secondaryContainer: '#581C87',
+    beige: '#25182F',
+  },
+};
+
+themes.coralLight = {
+  ...themes.roseLight,
+  id: 'coralLight',
+  name: 'Coral',
+  colors: {
+    ...themes.roseLight.colors,
+    primary: '#F43F5E',
+    primaryStrong: '#BE123C',
+    secondary: '#FDA4AF',
+    secondaryContainer: '#FFE4E6',
+    beige: '#FFF1F2',
+  },
+};
+
+themes.coralDark = {
+  ...themes.roseDark,
+  id: 'coralDark',
+  name: 'Coral',
+  colors: {
+    ...themes.roseDark.colors,
+    primary: '#FDA4AF',
+    primaryStrong: '#FFE4E6',
+    secondary: '#FB7185',
+    secondaryContainer: '#7F1D1D',
+    beige: '#2E1C20',
+  },
+};
+
+themes.jadeLight = {
+  ...themes.tealLight,
+  id: 'jadeLight',
+  name: 'Jade',
+  colors: {
+    ...themes.tealLight.colors,
+    primary: '#059669',
+    primaryStrong: '#047857',
+    secondary: '#34D399',
+    secondaryContainer: '#D1FAE5',
+    beige: '#ECFDF5',
+  },
+};
+
+themes.jadeDark = {
+  ...themes.tealDark,
+  id: 'jadeDark',
+  name: 'Jade',
+  colors: {
+    ...themes.tealDark.colors,
+    primary: '#6EE7B7',
+    primaryStrong: '#A7F3D0',
+    secondary: '#34D399',
+    secondaryContainer: '#064E3B',
+    beige: '#14251F',
+  },
+};
+
+themes.slateLight = {
+  ...themes.skyLight,
+  id: 'slateLight',
+  name: 'Slate',
+  colors: {
+    ...themes.skyLight.colors,
+    primary: '#475569',
+    primaryStrong: '#334155',
+    secondary: '#94A3B8',
+    secondaryContainer: '#E2E8F0',
+    beige: '#F8FAFC',
+  },
+};
+
+themes.slateDark = {
+  ...themes.skyDark,
+  id: 'slateDark',
+  name: 'Slate',
+  colors: {
+    ...themes.skyDark.colors,
+    primary: '#CBD5E1',
+    primaryStrong: '#F1F5F9',
+    secondary: '#94A3B8',
+    secondaryContainer: '#334155',
+    beige: '#1E293B',
+  },
+};
+
+themes.limeLight = {
+  ...themes.mintLight,
+  id: 'limeLight',
+  name: 'Lime',
+  colors: {
+    ...themes.mintLight.colors,
+    primary: '#65A30D',
+    primaryStrong: '#4D7C0F',
+    secondary: '#A3E635',
+    secondaryContainer: '#ECFCCB',
+    beige: '#F7FEE7',
+  },
+};
+
+themes.limeDark = {
+  ...themes.mintDark,
+  id: 'limeDark',
+  name: 'Lime',
+  colors: {
+    ...themes.mintDark.colors,
+    primary: '#BEF264',
+    primaryStrong: '#D9F99D',
+    secondary: '#A3E635',
+    secondaryContainer: '#365314',
+    beige: '#1F2A16',
+  },
+};
+
 const neutralLightSurfaces = {
   background: '#FAF9F5',
   surface: '#FFFFFF',
@@ -616,6 +788,48 @@ export const themeFamilies = [
     light: 'indigoLight',
     dark: 'indigoDark',
     palette: ['#4F46E5', '#A78BFA', '#F5F3FF'],
+  },
+  {
+    id: 'ocean',
+    label: 'Ocean',
+    light: 'oceanLight',
+    dark: 'oceanDark',
+    palette: ['#0284C7', '#22D3EE', '#ECFEFF'],
+  },
+  {
+    id: 'orchid',
+    label: 'Orchid',
+    light: 'orchidLight',
+    dark: 'orchidDark',
+    palette: ['#9333EA', '#C084FC', '#FAF5FF'],
+  },
+  {
+    id: 'coral',
+    label: 'Coral',
+    light: 'coralLight',
+    dark: 'coralDark',
+    palette: ['#F43F5E', '#FDA4AF', '#FFF1F2'],
+  },
+  {
+    id: 'jade',
+    label: 'Jade',
+    light: 'jadeLight',
+    dark: 'jadeDark',
+    palette: ['#059669', '#34D399', '#ECFDF5'],
+  },
+  {
+    id: 'slate',
+    label: 'Slate',
+    light: 'slateLight',
+    dark: 'slateDark',
+    palette: ['#475569', '#94A3B8', '#F8FAFC'],
+  },
+  {
+    id: 'lime',
+    label: 'Lime',
+    light: 'limeLight',
+    dark: 'limeDark',
+    palette: ['#65A30D', '#A3E635', '#F7FEE7'],
   },
 ];
 
