@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { Moon, Sun, UserRound } from "lucide-react-native";
+import { Moon, Settings, Sun, UserRound } from "lucide-react-native";
 import { AppHeader, HeaderActionButton } from "./AppHeader";
 import { getSetting } from "../storage/database";
 import { getThemeFamilyId, getThemeIdForFamilyMode } from "../theme/themes";
 import { useTheme } from "../theme/ThemeProvider";
 
-export function DashboardHeader() {
+export function DashboardHeader({ onOpenSettings }) {
   const { theme, themeId, setThemeId } = useTheme();
   const [profile, setProfile] = useState({
     firstName: "Alex",
@@ -58,6 +58,12 @@ export function DashboardHeader() {
         ) : (
           <Moon size={21} color={theme.colors.primary} />
         )}
+      </HeaderActionButton>
+      <HeaderActionButton
+        onPress={onOpenSettings}
+        accessibilityLabel="Open settings"
+      >
+        <Settings size={20} color={theme.colors.primary} />
       </HeaderActionButton>
     </AppHeader>
   );

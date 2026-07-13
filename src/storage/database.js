@@ -69,6 +69,16 @@ async function migrate(db) {
       key TEXT PRIMARY KEY NOT NULL,
       value TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS notes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      description TEXT,
+      reminder_hours INTEGER NOT NULL DEFAULT 0,
+      reminder_minutes INTEGER NOT NULL DEFAULT 0,
+      reminder_at TEXT NOT NULL,
+      notification_identifier TEXT,
+      created_at TEXT NOT NULL
+    );
   `);
   await ensureColumn(db, 'plants', 'is_favorite', 'INTEGER NOT NULL DEFAULT 0');
   await removeDuplicatePlants(db);
@@ -318,4 +328,55 @@ export async function getDashboardStats() {
     harvestReady: 0,
     reminders: 0,
   };
+}
+
+export async function createNote(note) {
+  const now = new Date().toISOString();
+  const result = await runDatabaseOperation((db) =>
+    db.runAsync(
+      `INSERT INTO notes
+        (title, description, reminder_hours, reminder_minutes, reminder_at, notification_identifier, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        note.title.trim(),
+        String(note.description || '').trim(),
+        Number(note.reminderHours) || 0,
+        Number(note.reminderMinutes) || 0,
+        note.reminderAt,
+        note.notificationIdentifier || null,
+        now,
+      ]
+    )
+  );
+  return result.lastInsertRowId;
+}
+
+export async function updateNoteNotificationIdentifier(id, notificationIdentifier) {
+  await runDatabaseOperation((db) =>
+    db.runAsync(
+      'UPDATE notes SET notification_identifier = ? WHERE id = ?',
+      [notificationIdentifier || null, Number(id)]
+    )
+  );
+}
+
+export async function listNotes() {
+  return runDatabaseOperation((db) =>
+    db.getAllAsync('SELECT * FROM notes ORDER BY created_at DESC, id DESC')
+  );
+}
+
+export async function listLatestNotes(limit = 3) {
+  return runDatabaseOperation((db) =>
+    db.getAllAsync(
+      'SELECT * FROM notes ORDER BY created_at DESC, id DESC LIMIT ?',
+      [Number(limit) || 3]
+    )
+  );
+}
+
+export async function deleteNote(id) {
+  await runDatabaseOperation((db) =>
+    db.runAsync('DELETE FROM notes WHERE id = ?', [Number(id)])
+  );
 }

@@ -3,6 +3,7 @@ import { Platform } from "react-native";
 import { getSetting, setSetting } from "../storage/database";
 
 const CHANNEL_ID = "plant-care-reminders";
+const NOTES_CHANNEL_ID = "note-reminders";
 const SCHEDULED_REMINDERS_KEY = "scheduledNotificationReminders";
 const DAILY_WATER_REMINDER_TIME_KEY = "dailyWaterReminderTime";
 const DAILY_WATER_REMINDER_ID = "daily-water-plants";
@@ -73,6 +74,53 @@ export async function sendTestWaterReminderNotification() {
   return { ok: true, identifier };
 }
 
+export async function scheduleNoteReminderNotification(note) {
+  await configureAndroidNotificationChannel();
+
+  const permissionGranted = await ensureNotificationPermission();
+  if (!permissionGranted) {
+    return { ok: false, reason: "permission-denied" };
+  }
+
+  const seconds =
+    Math.max(Number(note.reminderHours) || 0, 0) * 60 * 60 +
+    Math.max(Number(note.reminderMinutes) || 0, 0) * 60;
+
+  if (seconds <= 0) {
+    return { ok: false, reason: "invalid-time" };
+  }
+
+  const identifier = await Notifications.scheduleNotificationAsync({
+    content: {
+      title: note.title,
+      body: note.description || "Note reminder",
+      data: {
+        noteId: note.id,
+        reminderType: "note",
+      },
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds,
+      channelId: NOTES_CHANNEL_ID,
+    },
+  });
+
+  return { ok: true, identifier };
+}
+
+export async function cancelNoteReminderNotification(identifier) {
+  if (!identifier) {
+    return;
+  }
+
+  try {
+    await Notifications.cancelScheduledNotificationAsync(identifier);
+  } catch {
+    // The note can still be deleted if Android already fired or removed it.
+  }
+}
+
 export async function getDailyWaterReminderTime() {
   const defaultReminder = notificationReminderConfigs.find(
     (reminder) => reminder.id === DAILY_WATER_REMINDER_ID
@@ -135,6 +183,12 @@ async function configureAndroidNotificationChannel() {
 
   await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
     name: "Plant care reminders",
+    importance: Notifications.AndroidImportance.HIGH,
+    vibrationPattern: [0, 250, 250, 250],
+    lightColor: "#2E7D32",
+  });
+  await Notifications.setNotificationChannelAsync(NOTES_CHANNEL_ID, {
+    name: "Note reminders",
     importance: Notifications.AndroidImportance.HIGH,
     vibrationPattern: [0, 250, 250, 250],
     lightColor: "#2E7D32",

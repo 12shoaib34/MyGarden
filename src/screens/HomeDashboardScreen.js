@@ -8,18 +8,23 @@ import {
   Text,
   View,
 } from "react-native";
-import { Camera, Droplets, Leaf, Sprout, Wheat } from "lucide-react-native";
+import { Droplets, FileText, Leaf, Sprout, Wheat } from "lucide-react-native";
 import { Card } from "../components/Card";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { WeatherSummaryCard } from "../components/WeatherSummaryCard";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { withHaptic } from "../services/hapticService";
 import { getSurjaniTownWeather } from "../services/weatherService";
-import { getDashboardStats, listFavoritePlants } from "../storage/database";
+import { getDashboardStats, listFavoritePlants, listLatestNotes } from "../storage/database";
 import { useTheme } from "../theme/ThemeProvider";
 import { getPlantAgeLabel } from "../utils/plantAge";
+import {
+  formatDuration,
+  formatReminderDate,
+  getNoteTimingState,
+} from "./NotesScreen";
 
-export function HomeDashboardScreen({ onViewAllPlants }) {
+export function HomeDashboardScreen({ onViewAllPlants, onOpenSettings }) {
   const { theme } = useTheme();
   const insets = useGetSafeAreaInsets();
   const themedStyles = createStyles(theme, insets);
@@ -30,6 +35,7 @@ export function HomeDashboardScreen({ onViewAllPlants }) {
     harvestReady: 0,
   });
   const [plants, setPlants] = useState([]);
+  const [notes, setNotes] = useState([]);
   const [weather, setWeather] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -37,15 +43,17 @@ export function HomeDashboardScreen({ onViewAllPlants }) {
     let alive = true;
 
     async function load() {
-      const [nextStats, nextPlants, nextWeather] = await Promise.all([
+      const [nextStats, nextPlants, nextNotes, nextWeather] = await Promise.all([
         getDashboardStats(),
         listFavoritePlants(5),
+        listLatestNotes(3),
         getSurjaniTownWeather(),
       ]);
 
       if (alive) {
         setStats(nextStats);
         setPlants(nextPlants);
+        setNotes(nextNotes);
         setWeather(nextWeather);
       }
     }
@@ -61,14 +69,16 @@ export function HomeDashboardScreen({ onViewAllPlants }) {
     setRefreshing(true);
 
     try {
-      const [nextStats, nextPlants, nextWeather] = await Promise.all([
+      const [nextStats, nextPlants, nextNotes, nextWeather] = await Promise.all([
         getDashboardStats(),
         listFavoritePlants(5),
+        listLatestNotes(3),
         getSurjaniTownWeather({ forceRefresh: true }),
       ]);
 
       setStats(nextStats);
       setPlants(nextPlants);
+      setNotes(nextNotes);
       setWeather(nextWeather);
     } finally {
       setRefreshing(false);
@@ -77,7 +87,7 @@ export function HomeDashboardScreen({ onViewAllPlants }) {
 
   return (
     <View style={themedStyles.screen}>
-      <DashboardHeader />
+      <DashboardHeader onOpenSettings={onOpenSettings} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -161,16 +171,22 @@ export function HomeDashboardScreen({ onViewAllPlants }) {
           )}
         </ScrollView>
 
-        <Text style={themedStyles.activityTitle}>Recent Activity</Text>
-        <Card style={themedStyles.emptyActivityCard}>
-          <View style={themedStyles.emptyIcon}>
-            <Camera size={26} color={theme.colors.primary} />
-          </View>
-          <Text style={themedStyles.emptyTitle}>No activity yet</Text>
-          <Text style={themedStyles.emptyBody}>
-            Watering, feeding, photos, and notes will appear here.
-          </Text>
-        </Card>
+        <Text style={themedStyles.activityTitle}>Recent Notes</Text>
+        <View style={themedStyles.activities}>
+          {notes.length > 0 ? (
+            notes.map((note) => <RecentNoteItem key={note.id} note={note} />)
+          ) : (
+            <Card style={themedStyles.emptyActivityCard}>
+              <View style={themedStyles.emptyIcon}>
+                <FileText size={26} color={theme.colors.primary} />
+              </View>
+              <Text style={themedStyles.emptyTitle}>No notes yet</Text>
+              <Text style={themedStyles.emptyBody}>
+                Your latest note reminders will appear here.
+              </Text>
+            </Card>
+          )}
+        </View>
       </ScrollView>
     </View>
   );
@@ -250,14 +266,15 @@ function GardenCard({ plant }) {
   );
 }
 
-function ActivityItem({ Icon, title, body, time, tone }) {
+function RecentNoteItem({ note }) {
   const { theme } = useTheme();
-  const color = theme.colors[tone] || theme.colors.primary;
+  const timing = getNoteTimingState(note);
+  const color = timing.inactive ? theme.colors.textMuted : theme.colors.primary;
 
   return (
-    <Card style={styles.activity}>
+    <Card style={[styles.activity, timing.inactive && styles.activityInactive]}>
       <View style={[styles.activityIcon, { backgroundColor: `${color}18` }]}>
-        <Icon size={22} color={color} />
+        <FileText size={22} color={color} />
       </View>
       <View style={styles.activityText}>
         <View style={styles.activityHeader}>
@@ -265,13 +282,13 @@ function ActivityItem({ Icon, title, body, time, tone }) {
             style={[
               theme.typography.label,
               styles.activityTitleText,
-              { color: theme.colors.text },
+              { color: timing.inactive ? theme.colors.textMuted : theme.colors.text },
             ]}
           >
-            {title}
+            {note.title}
           </Text>
           <Text style={[styles.time, { color: theme.colors.textMuted }]}>
-            {time}
+            {formatReminderDate(note.reminder_at)}
           </Text>
         </View>
         <Text
@@ -279,8 +296,9 @@ function ActivityItem({ Icon, title, body, time, tone }) {
             theme.typography.bodySmall,
             { color: theme.colors.textMuted },
           ]}
+          numberOfLines={2}
         >
-          {body}
+          {note.description || `Reminder after ${formatDuration(note.reminder_hours, note.reminder_minutes)}`}
         </Text>
       </View>
     </Card>
@@ -346,6 +364,9 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: 16,
     padding: 16,
+  },
+  activityInactive: {
+    opacity: 0.78,
   },
   activityIcon: {
     width: 48,

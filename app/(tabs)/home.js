@@ -15,6 +15,7 @@ export default function HomeRoute() {
     <HomeDashboardScreen
       key={focusVersion}
       onViewAllPlants={() => router.navigate("/(tabs)/plants")}
+      onOpenSettings={() => router.navigate("/(tabs)/settings")}
     />
   );
 }
