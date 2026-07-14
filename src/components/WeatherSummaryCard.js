@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import {
   Cloud,
   CloudDrizzle,
@@ -10,9 +10,10 @@ import {
   Sun,
 } from "lucide-react-native";
 import { Card } from "./Card";
+import { withHaptic } from "../services/hapticService";
 import { useTheme } from "../theme/ThemeProvider";
 
-export function WeatherSummaryCard({ weather }) {
+export function WeatherSummaryCard({ weather, onPress }) {
   const { theme } = useTheme();
   const Icon = getWeatherIcon(weather?.weatherCode);
   const temperature = weather?.temperature ?? 24;
@@ -22,7 +23,7 @@ export function WeatherSummaryCard({ weather }) {
   const humidity = weather?.humidity ?? 65;
   const windSpeed = weather?.windSpeed ?? 5;
 
-  return (
+  const content = (
     <Card style={[styles.weatherCard, { backgroundColor: theme.colors.surfaceSoft }]}>
       <View style={[styles.weatherIcon, { backgroundColor: `${theme.colors.primary}12` }]}>
         <Icon size={30} color={theme.colors.primary} />
@@ -47,6 +48,21 @@ export function WeatherSummaryCard({ weather }) {
         </Text>
       </View>
     </Card>
+  );
+
+  if (!onPress) {
+    return content;
+  }
+
+  return (
+    <Pressable
+      onPress={withHaptic(onPress)}
+      accessibilityRole="button"
+      accessibilityLabel="Open weather details"
+      style={({ pressed }) => ({ opacity: pressed ? 0.78 : 1 })}
+    >
+      {content}
+    </Pressable>
   );
 }
 

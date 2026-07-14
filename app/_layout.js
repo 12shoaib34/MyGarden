@@ -62,6 +62,7 @@ function RootStack() {
         <Stack.Screen name="settings-data" />
         <Stack.Screen name="notification-schedule" />
         <Stack.Screen name="fertilizer-timeline" />
+        <Stack.Screen name="weather" />
         <Stack.Screen name="plant-info" />
         <Stack.Screen name="plant-info/[id]" />
       </Stack>

@@ -34,7 +34,7 @@ import {
   getNoteTimingState,
 } from "./NotesScreen";
 
-export function HomeDashboardScreen({ onViewAllPlants, onOpenMore }) {
+export function HomeDashboardScreen({ onViewAllPlants, onOpenMore, onOpenWeather }) {
   const { theme } = useTheme();
   const insets = useGetSafeAreaInsets();
   const themedStyles = createStyles(theme, insets);
@@ -129,7 +129,7 @@ export function HomeDashboardScreen({ onViewAllPlants, onOpenMore }) {
           />
         }
       >
-        <WeatherSummaryCard weather={weather} />
+        <WeatherSummaryCard weather={weather} onPress={onOpenWeather} />
 
         <View style={themedStyles.grid}>
           <DashboardStat

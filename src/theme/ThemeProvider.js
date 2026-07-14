@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { defaultThemeId, themes } from './themes';
+import { defaultThemeId, isSelectableThemeId, themes } from './themes';
 import { getSetting, setSetting } from '../storage/database';
 
 const ThemeContext = createContext(null);
@@ -10,7 +10,7 @@ export function AppThemeProvider({ children }) {
 
   useEffect(() => {
     getSetting('themeId', defaultThemeId).then((savedThemeId) => {
-      if (themes[savedThemeId]) {
+      if (themes[savedThemeId] && isSelectableThemeId(savedThemeId)) {
         setThemeIdState(savedThemeId);
       }
     });
@@ -20,7 +20,7 @@ export function AppThemeProvider({ children }) {
     theme,
     themeId,
     setThemeId: async (nextThemeId) => {
-      if (!themes[nextThemeId]) {
+      if (!themes[nextThemeId] || !isSelectableThemeId(nextThemeId)) {
         return;
       }
       setThemeIdState(nextThemeId);

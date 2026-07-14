@@ -16,6 +16,7 @@ export default function HomeRoute() {
       key={focusVersion}
       onViewAllPlants={() => router.navigate("/(tabs)/plants")}
       onOpenMore={() => router.navigate("/(tabs)/more")}
+      onOpenWeather={() => router.push("/weather")}
     />
   );
 }

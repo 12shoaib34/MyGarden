@@ -31,7 +31,7 @@ export function ThemeSettingsScreen({ onBack }) {
       <ScrollView contentContainerStyle={themedStyles.scroll}>
         <Card style={themedStyles.card}>
           <Text style={themedStyles.cardSubtitle}>
-            Select a palette for light and dark mode.
+            Choose a garden palette inspired by seasons and planting zones.
           </Text>
           <View style={themedStyles.themeGrid}>
             {themeFamilies.map((family) => (
@@ -83,7 +83,13 @@ function ThemeFamilyButton({ family, selected, onPress }) {
   const themedStyles = createStyles(theme, useGetSafeAreaInsets());
 
   return (
-    <Pressable style={themedStyles.themeButton} onPress={withHaptic(onPress)}>
+    <Pressable
+      style={[
+        themedStyles.themeButton,
+        selected && themedStyles.themeButtonSelected,
+      ]}
+      onPress={withHaptic(onPress)}
+    >
       <View style={themedStyles.paletteWrap}>
         <View style={themedStyles.paletteCircle}>
           {family.palette.map((color, index) => (
@@ -99,6 +105,15 @@ function ThemeFamilyButton({ family, selected, onPress }) {
           </View>
         ) : null}
       </View>
+      <Text
+        style={[
+          themedStyles.themeLabel,
+          selected && themedStyles.themeLabelSelected,
+        ]}
+        numberOfLines={1}
+      >
+        {family.label}
+      </Text>
     </Pressable>
   );
 }
@@ -125,17 +140,27 @@ function createStyles(theme, insets) {
     themeGrid: {
       flexDirection: "row",
       flexWrap: "wrap",
-      columnGap: 10,
+      columnGap: 12,
       rowGap: 12,
       alignItems: "center",
     },
     themeButton: {
-      width: 46,
-      height: 46,
-      borderRadius: 23,
+      width: "30%",
+      minWidth: 92,
+      minHeight: 86,
+      borderRadius: 18,
       alignItems: "center",
       justifyContent: "center",
-      overflow: "visible",
+      gap: 8,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.surfaceSoft,
+      paddingVertical: 10,
+      paddingHorizontal: 8,
+    },
+    themeButtonSelected: {
+      borderColor: theme.colors.primary,
+      backgroundColor: theme.colors.successSurface,
     },
     paletteWrap: {
       width: 38,
@@ -168,6 +193,15 @@ function createStyles(theme, insets) {
       position: "absolute",
       top: -6,
       right: -6,
+    },
+    themeLabel: {
+      ...theme.typography.label,
+      fontSize: 12,
+      color: theme.colors.textMuted,
+      textAlign: "center",
+    },
+    themeLabelSelected: {
+      color: theme.colors.primaryStrong,
     },
     darkModeRow: {
       minHeight: 68,
