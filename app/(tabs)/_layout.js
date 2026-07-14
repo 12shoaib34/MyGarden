@@ -12,9 +12,8 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="home" options={{ title: "Home" }} />
       <Tabs.Screen name="plants" options={{ title: "My Plants" }} />
-      <Tabs.Screen name="info" options={{ title: "Plant Info" }} />
       <Tabs.Screen name="notes" options={{ title: "Notes" }} />
-      <Tabs.Screen name="settings" options={{ title: "Settings" }} />
+      <Tabs.Screen name="more" options={{ title: "More" }} />
     </Tabs>
   );
 }

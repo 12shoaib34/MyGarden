@@ -1,7 +1,6 @@
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { ArrowLeft, CalendarDays, Flower2, Leaf, Scissors, ShieldAlert, Sprout, TreePine, Trees } from "lucide-react-native";
 import { AppHeader, HeaderActionButton } from "../components/AppHeader";
-import { bottomTabHeight } from "../components/BottomTabs";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { useTheme } from "../theme/ThemeProvider";
 import { formatMonths, includesCurrentMonth } from "../utils/months";
@@ -247,7 +246,7 @@ function createStyles(theme, insets) {
     scroll: {
       paddingHorizontal: 20,
       paddingTop: 18,
-      paddingBottom: bottomTabHeight + insets.bottom + 28,
+      paddingBottom: Math.max(insets.bottom, 24) + 28,
       gap: 16,
     },
     heroImage: {

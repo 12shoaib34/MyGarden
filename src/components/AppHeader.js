@@ -3,7 +3,14 @@ import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { withHaptic } from "../services/hapticService";
 import { useTheme } from "../theme/ThemeProvider";
 
-export function AppHeader({ icon: Icon, imageUri, title, subtitle, children, right }) {
+export function AppHeader({
+  icon: Icon,
+  imageUri,
+  title,
+  subtitle,
+  children,
+  right,
+}) {
   const { theme } = useTheme();
   const insets = useGetSafeAreaInsets();
   const actions = children ?? right;

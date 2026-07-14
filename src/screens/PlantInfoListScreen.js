@@ -4,7 +4,6 @@ import { BookOpen, ChevronRight, Filter, Flower2, Leaf, Search, Sprout, TreePine
 import { AppHeader } from "../components/AppHeader";
 import plantInfo from "../data/plantInfo.json";
 import { Chip } from "../components/Chip";
-import { bottomTabHeight } from "../components/BottomTabs";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { withHaptic } from "../services/hapticService";
 import { useTheme } from "../theme/ThemeProvider";
@@ -143,7 +142,7 @@ function createStyles(theme, insets) {
     scroll: {
       paddingHorizontal: 20,
       paddingTop: 20,
-      paddingBottom: bottomTabHeight + insets.bottom + 28,
+      paddingBottom: Math.max(insets.bottom, 24) + 28,
       gap: 18,
     },
     searchBar: {

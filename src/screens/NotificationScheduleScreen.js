@@ -10,34 +10,48 @@ import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { withHaptic } from "../services/hapticService";
 import {
   getDailyWaterReminderTime,
+  getFertilizerReminderTime,
+  sendTestFertilizerReminderNotification,
   sendTestWaterReminderNotification,
   updateDailyWaterReminderTime,
+  updateFertilizerReminderTime,
 } from "../services/notificationService";
 import { useTheme } from "../theme/ThemeProvider";
+
+const defaultEditorTime = { hour: "04", minute: "00", period: "PM" };
 
 export function NotificationScheduleScreen({ onBack }) {
   const { theme } = useTheme();
   const { showDialog } = useAppDialog();
   const insets = useGetSafeAreaInsets();
   const themedStyles = createStyles(theme, insets);
-  const [hour, setHour] = useState("04");
-  const [minute, setMinute] = useState("00");
-  const [period, setPeriod] = useState("PM");
-  const [busy, setBusy] = useState(false);
-  const [testBusy, setTestBusy] = useState(false);
+  const [waterTime, setWaterTime] = useState(defaultEditorTime);
+  const [fertilizerTime, setFertilizerTime] = useState({
+    hour: "09",
+    minute: "00",
+    period: "AM",
+  });
+  const [busyKey, setBusyKey] = useState(null);
+  const [testBusyKey, setTestBusyKey] = useState(null);
 
   useEffect(() => {
-    getDailyWaterReminderTime().then((time) => {
-      const nextTime = to12HourTime(time.hour, time.minute);
-      setHour(String(nextTime.hour).padStart(2, "0"));
-      setMinute(String(time.minute).padStart(2, "0"));
-      setPeriod(nextTime.period);
-    });
+    Promise.all([getDailyWaterReminderTime(), getFertilizerReminderTime()]).then(
+      ([waterReminderTime, fertilizerReminderTime]) => {
+        setWaterTime(toEditorTime(waterReminderTime));
+        setFertilizerTime(toEditorTime(fertilizerReminderTime));
+      }
+    );
   }, []);
 
-  async function saveSchedule() {
-    const displayHour = Number(hour);
-    const nextMinute = Number(minute);
+  async function saveSchedule({
+    key,
+    editorTime,
+    updateReminderTime,
+    successTitle,
+    successBody,
+  }) {
+    const displayHour = Number(editorTime.hour);
+    const nextMinute = Number(editorTime.minute);
     if (
       !Number.isInteger(displayHour) ||
       !Number.isInteger(nextMinute) ||
@@ -54,15 +68,15 @@ export function NotificationScheduleScreen({ onBack }) {
       return;
     }
 
-    const nextHour = to24Hour(displayHour, period);
+    const nextHour = to24Hour(displayHour, editorTime.period);
 
-    setBusy(true);
+    setBusyKey(key);
     try {
-      const result = await updateDailyWaterReminderTime(nextHour, nextMinute);
+      const result = await updateReminderTime(nextHour, nextMinute);
       await showDialog({
-        title: result.ok ? "Reminder updated" : "Permission needed",
+        title: result.ok ? successTitle : "Permission needed",
         message: result.ok
-          ? `Daily watering reminder set for ${formatTime12(displayHour, nextMinute, period)}.`
+          ? successBody(formatTime12(displayHour, nextMinute, editorTime.period))
           : "Allow notifications for MyGarden, then try again.",
         variant: result.ok ? "success" : "warning",
       });
@@ -73,18 +87,18 @@ export function NotificationScheduleScreen({ onBack }) {
         variant: "error",
       });
     } finally {
-      setBusy(false);
+      setBusyKey(null);
     }
   }
 
-  async function sendTest() {
-    setTestBusy(true);
+  async function sendTest({ key, sendTestNotification, successMessage }) {
+    setTestBusyKey(key);
     try {
-      const result = await sendTestWaterReminderNotification();
+      const result = await sendTestNotification();
       await showDialog({
         title: result.ok ? "Test notification sent" : "Permission needed",
         message: result.ok
-          ? "A water plants reminder was sent now."
+          ? successMessage
           : "Allow notifications for MyGarden, then try again.",
         variant: result.ok ? "success" : "warning",
       });
@@ -95,94 +109,168 @@ export function NotificationScheduleScreen({ onBack }) {
         variant: "error",
       });
     } finally {
-      setTestBusy(false);
+      setTestBusyKey(null);
     }
   }
 
   return (
     <View style={themedStyles.screen}>
-      <AppHeader icon={Bell} title="Notification Schedule" subtitle="Daily watering reminder">
+      <AppHeader icon={Bell} title="Notification Schedule" subtitle="Reminder times">
         <CloseButton onPress={onBack} />
       </AppHeader>
       <ScrollView contentContainerStyle={themedStyles.scroll}>
-        <Card style={themedStyles.card}>
-          <View style={themedStyles.timeHeader}>
-            <View style={themedStyles.timeIcon}>
-              <Clock size={22} color={theme.colors.primary} />
-            </View>
-            <View style={themedStyles.timeText}>
-              <Text style={themedStyles.timeTitle}>Daily watering</Text>
-              <Text style={themedStyles.timeSubtitle}>
-                Current time: {formatTime12(Number(hour), Number(minute), period)}
-              </Text>
-            </View>
-          </View>
+        <ReminderTimeCard
+          title="Daily watering"
+          editorTime={waterTime}
+          setEditorTime={setWaterTime}
+          busy={busyKey === "water"}
+          testBusy={testBusyKey === "water"}
+          onSave={() =>
+            saveSchedule({
+              key: "water",
+              editorTime: waterTime,
+              updateReminderTime: updateDailyWaterReminderTime,
+              successTitle: "Reminder updated",
+              successBody: (timeLabel) => `Daily watering reminder set for ${timeLabel}.`,
+            })
+          }
+          onTest={() =>
+            sendTest({
+              key: "water",
+              sendTestNotification: sendTestWaterReminderNotification,
+              successMessage: "A water plants reminder was sent now.",
+            })
+          }
+        />
 
-          <View style={themedStyles.timeRow}>
-            <View style={themedStyles.timeField}>
-              <TextField
-                label="Hour"
-                value={hour}
-                onChangeText={(text) => setHour(toDigits(text, 2))}
-                placeholder="04"
-                keyboardType="number-pad"
-                maxLength={2}
-              />
-            </View>
-            <View style={themedStyles.timeField}>
-              <TextField
-                label="Minute"
-                value={minute}
-                onChangeText={(text) => setMinute(toDigits(text, 2))}
-                placeholder="00"
-                keyboardType="number-pad"
-                maxLength={2}
-              />
-            </View>
-          </View>
-
-          <View style={themedStyles.periodRow}>
-            {["AM", "PM"].map((item) => (
-              <Pressable
-                key={item}
-                onPress={withHaptic(() => setPeriod(item))}
-                style={[
-                  themedStyles.periodButton,
-                  period === item && themedStyles.periodButtonSelected,
-                ]}
-              >
-                <Text
-                  style={[
-                    themedStyles.periodText,
-                    period === item && themedStyles.periodTextSelected,
-                  ]}
-                >
-                  {item}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-
-          <View style={themedStyles.actions}>
-            <Button
-              title={busy ? "Saving..." : "Save"}
-              onPress={saveSchedule}
-              disabled={busy}
-              Icon={Check}
-              style={themedStyles.actionButton}
-            />
-            <Button
-              title={testBusy ? "Sending..." : "Test"}
-              variant="secondary"
-              onPress={sendTest}
-              disabled={testBusy}
-              Icon={Send}
-              style={themedStyles.actionButton}
-            />
-          </View>
-        </Card>
+        <ReminderTimeCard
+          title="Fertilizer Timeline"
+          editorTime={fertilizerTime}
+          setEditorTime={setFertilizerTime}
+          busy={busyKey === "fertilizer"}
+          testBusy={testBusyKey === "fertilizer"}
+          onSave={() =>
+            saveSchedule({
+              key: "fertilizer",
+              editorTime: fertilizerTime,
+              updateReminderTime: updateFertilizerReminderTime,
+              successTitle: "Fertilizer time updated",
+              successBody: (timeLabel) => `Fertilizer reminders will use ${timeLabel}.`,
+            })
+          }
+          onTest={() =>
+            sendTest({
+              key: "fertilizer",
+              sendTestNotification: sendTestFertilizerReminderNotification,
+              successMessage: "A fertilizer timeline reminder was sent now.",
+            })
+          }
+        />
       </ScrollView>
     </View>
+  );
+}
+
+function ReminderTimeCard({
+  title,
+  editorTime,
+  setEditorTime,
+  busy,
+  testBusy,
+  onSave,
+  onTest,
+}) {
+  const { theme } = useTheme();
+  const themedStyles = createStyles(theme, useGetSafeAreaInsets());
+
+  return (
+    <Card style={themedStyles.card}>
+      <View style={themedStyles.timeHeader}>
+        <View style={themedStyles.timeIcon}>
+          <Clock size={22} color={theme.colors.primary} />
+        </View>
+        <View style={themedStyles.timeText}>
+          <Text style={themedStyles.timeTitle}>{title}</Text>
+          <Text style={themedStyles.timeSubtitle}>
+            Current time:{" "}
+            {formatTime12(
+              Number(editorTime.hour),
+              Number(editorTime.minute),
+              editorTime.period
+            )}
+          </Text>
+        </View>
+      </View>
+
+      <View style={themedStyles.timeRow}>
+        <View style={themedStyles.timeField}>
+          <TextField
+            label="Hour"
+            value={editorTime.hour}
+            onChangeText={(text) =>
+              setEditorTime((current) => ({ ...current, hour: toDigits(text, 2) }))
+            }
+            placeholder="09"
+            keyboardType="number-pad"
+            maxLength={2}
+          />
+        </View>
+        <View style={themedStyles.timeField}>
+          <TextField
+            label="Minute"
+            value={editorTime.minute}
+            onChangeText={(text) =>
+              setEditorTime((current) => ({ ...current, minute: toDigits(text, 2) }))
+            }
+            placeholder="00"
+            keyboardType="number-pad"
+            maxLength={2}
+          />
+        </View>
+      </View>
+
+      <View style={themedStyles.periodRow}>
+        {["AM", "PM"].map((item) => (
+          <Pressable
+            key={item}
+            onPress={withHaptic(() =>
+              setEditorTime((current) => ({ ...current, period: item }))
+            )}
+            style={[
+              themedStyles.periodButton,
+              editorTime.period === item && themedStyles.periodButtonSelected,
+            ]}
+          >
+            <Text
+              style={[
+                themedStyles.periodText,
+                editorTime.period === item && themedStyles.periodTextSelected,
+              ]}
+            >
+              {item}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      <View style={themedStyles.actions}>
+        <Button
+          title={busy ? "Saving..." : "Save"}
+          onPress={onSave}
+          disabled={busy}
+          Icon={Check}
+          style={themedStyles.actionButton}
+        />
+        <Button
+          title={testBusy ? "Sending..." : "Test"}
+          variant="secondary"
+          onPress={onTest}
+          disabled={testBusy}
+          Icon={Send}
+          style={themedStyles.actionButton}
+        />
+      </View>
+    </Card>
   );
 }
 
@@ -206,6 +294,15 @@ function to12HourTime(hour, minute) {
   return { hour: displayHour, minute, period };
 }
 
+function toEditorTime(time) {
+  const nextTime = to12HourTime(time.hour, time.minute);
+  return {
+    hour: String(nextTime.hour).padStart(2, "0"),
+    minute: String(time.minute).padStart(2, "0"),
+    period: nextTime.period,
+  };
+}
+
 function to24Hour(hour, period) {
   const normalizedHour = Number(hour) % 12;
   return period === "PM" ? normalizedHour + 12 : normalizedHour;
@@ -227,6 +324,7 @@ function createStyles(theme, insets) {
       paddingHorizontal: 20,
       paddingTop: 20,
       paddingBottom: Math.max(insets.bottom, 24) + 24,
+      gap: 16,
     },
     card: {
       padding: 24,

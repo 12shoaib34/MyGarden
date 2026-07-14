@@ -79,6 +79,16 @@ async function migrate(db) {
       notification_identifier TEXT,
       created_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS fertilizer_task_states (
+      month_key TEXT NOT NULL,
+      task_id TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      notes TEXT,
+      notification_identifier TEXT,
+      completed_at TEXT,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (month_key, task_id)
+    );
   `);
   await ensureColumn(db, 'plants', 'is_favorite', 'INTEGER NOT NULL DEFAULT 0');
   await removeDuplicatePlants(db);
@@ -378,5 +388,81 @@ export async function listLatestNotes(limit = 3) {
 export async function deleteNote(id) {
   await runDatabaseOperation((db) =>
     db.runAsync('DELETE FROM notes WHERE id = ?', [Number(id)])
+  );
+}
+
+export async function listFertilizerTaskStates(monthKey) {
+  return runDatabaseOperation((db) =>
+    db.getAllAsync(
+      'SELECT * FROM fertilizer_task_states WHERE month_key = ?',
+      [monthKey]
+    )
+  );
+}
+
+export async function upsertFertilizerTaskState(monthKey, taskId, changes = {}) {
+  const now = new Date().toISOString();
+  const existing = await runDatabaseOperation((db) =>
+    db.getFirstAsync(
+      'SELECT * FROM fertilizer_task_states WHERE month_key = ? AND task_id = ?',
+      [monthKey, taskId]
+    )
+  );
+  const nextStatus = changes.status ?? existing?.status ?? 'pending';
+  const nextNotes = changes.notes ?? existing?.notes ?? '';
+  const hasNotificationIdentifierChange = Object.prototype.hasOwnProperty.call(
+    changes,
+    'notificationIdentifier'
+  );
+  const nextNotificationIdentifier = hasNotificationIdentifierChange
+    ? changes.notificationIdentifier
+    : existing?.notification_identifier ?? null;
+  const nextCompletedAt =
+    changes.completedAt ??
+    (nextStatus === 'completed' || nextStatus === 'skipped'
+      ? existing?.completed_at ?? now
+      : null);
+
+  await runDatabaseOperation((db) =>
+    db.runAsync(
+      `INSERT OR REPLACE INTO fertilizer_task_states
+        (month_key, task_id, status, notes, notification_identifier, completed_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        monthKey,
+        taskId,
+        nextStatus,
+        nextNotes,
+        nextNotificationIdentifier,
+        nextCompletedAt,
+        now,
+      ]
+    )
+  );
+}
+
+export async function updateFertilizerTaskNotificationIdentifier(
+  monthKey,
+  taskId,
+  notificationIdentifier
+) {
+  await upsertFertilizerTaskState(monthKey, taskId, { notificationIdentifier });
+}
+
+export async function listFertilizerHistory(limit = 6) {
+  return runDatabaseOperation((db) =>
+    db.getAllAsync(
+      `SELECT
+        month_key,
+        COUNT(*) AS touched_count,
+        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed_count,
+        SUM(CASE WHEN status = 'skipped' THEN 1 ELSE 0 END) AS skipped_count,
+        MAX(updated_at) AS updated_at
+      FROM fertilizer_task_states
+      GROUP BY month_key
+      ORDER BY month_key DESC
+      LIMIT ?`,
+      [Number(limit) || 6]
+    )
   );
 }

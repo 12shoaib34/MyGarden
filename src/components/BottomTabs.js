@@ -1,14 +1,14 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { BookOpen, FileText, Home, Leaf } from "lucide-react-native";
+import { FileText, Home, Leaf, MoreHorizontal } from "lucide-react-native";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { withHaptic } from "../services/hapticService";
 import { useTheme } from "../theme/ThemeProvider";
 
 const tabs = [
   ["home", "Home", Home],
-  ["plants", "My Plants", Leaf],
-  ["info", "Plant Info", BookOpen],
+  ["plants", "Plants", Leaf],
   ["notes", "Notes", FileText],
+  ["more", "More", MoreHorizontal],
 ];
 
 export const bottomTabHeight = 110;

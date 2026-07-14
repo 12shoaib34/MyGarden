@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import {
+  FlatList,
   Image,
   Modal,
   Pressable,
@@ -34,6 +35,7 @@ import { useTheme } from "../theme/ThemeProvider";
 import { getPlantAgeLabel } from "../utils/plantAge";
 
 const filters = ["All", "Vegetable", "Fruit", "Herb", "Tree", "Flower", "Indoor", "Succulent"];
+const pageSize = 12;
 
 export function PlantsScreen({ onAddPlant, onEditPlant }) {
   const { theme } = useTheme();
@@ -45,6 +47,7 @@ export function PlantsScreen({ onAddPlant, onEditPlant }) {
   const [filter, setFilter] = useState("All");
   const [deletingPlantId, setDeletingPlantId] = useState(null);
   const [previewPlant, setPreviewPlant] = useState(null);
+  const [visibleCount, setVisibleCount] = useState(pageSize);
 
   useEffect(() => {
     let alive = true;
@@ -77,22 +80,57 @@ export function PlantsScreen({ onAddPlant, onEditPlant }) {
       })
       .sort(comparePlantsByName);
   }, [filter, plants, query]);
+  const pagedPlants = useMemo(
+    () => visiblePlants.slice(0, visibleCount),
+    [visibleCount, visiblePlants]
+  );
+
+  useEffect(() => {
+    setVisibleCount(pageSize);
+  }, [filter, query]);
+
+  const loadMorePlants = useCallback(() => {
+    setVisibleCount((currentCount) =>
+      currentCount >= visiblePlants.length
+        ? currentCount
+        : Math.min(currentCount + pageSize, visiblePlants.length)
+    );
+  }, [visiblePlants.length]);
+
+  const renderPlant = useCallback(
+    ({ item: plant }) => (
+      <PlantListCard
+        plant={plant}
+        onPress={() => onEditPlant?.(plant)}
+        onViewImage={() => setPreviewPlant(plant)}
+        onToggleFavorite={() => toggleFavoritePlant(plant)}
+        onDelete={() => confirmDeletePlant(plant)}
+        deleting={deletingPlantId === plant.id}
+      />
+    ),
+    [deletingPlantId, onEditPlant]
+  );
+
+  const keyExtractor = useCallback((plant) => String(plant.id), []);
 
   async function copyPlantsByCategory() {
-    if (!plants.length) {
+    if (!visiblePlants.length) {
       await showDialog({
         title: "No plants",
-        message: "Add plants first, then copy the list.",
+        message: "No plants match the selected category or search.",
         variant: "warning",
       });
       return;
     }
 
-    const text = formatPlantsByCategory(plants);
+    const text = formatPlantsByCategory(visiblePlants);
     await Clipboard.setStringAsync(text);
     await showDialog({
       title: "Copied",
-      message: "Plant names copied category wise.",
+      message:
+        filter === "All" && !query.trim()
+          ? "All plant names copied category wise."
+          : "Filtered plant names copied.",
       variant: "success",
     });
   }
@@ -162,8 +200,8 @@ export function PlantsScreen({ onAddPlant, onEditPlant }) {
         icon={Sprout}
         title="My Plants"
         subtitle={
-          plants.length > 0
-            ? `${plants.length} plants saved locally`
+          visiblePlants.length > 0
+            ? `${visiblePlants.length} plants shown`
             : "Saved local plants will appear here"
         }
       >
@@ -174,7 +212,7 @@ export function PlantsScreen({ onAddPlant, onEditPlant }) {
           <Copy size={18} color={theme.colors.primary} />
         </HeaderActionButton>
         <View style={themedStyles.countBadge}>
-          <Text style={themedStyles.countValue}>{plants.length}</Text>
+          <Text style={themedStyles.countValue}>{visiblePlants.length}</Text>
         </View>
         <Pressable
           style={themedStyles.addButton}
@@ -186,68 +224,33 @@ export function PlantsScreen({ onAddPlant, onEditPlant }) {
         </Pressable>
       </AppHeader>
 
-      <ScrollView
+      <FlatList
+        data={pagedPlants}
+        keyExtractor={keyExtractor}
+        renderItem={renderPlant}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={themedStyles.scroll}
-      >
-        <View style={themedStyles.searchBar}>
-          <Search size={20} color={theme.colors.textMuted} />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search plants"
-            placeholderTextColor={theme.colors.textMuted}
-            style={themedStyles.searchInput}
+        contentContainerStyle={themedStyles.listContent}
+        ListHeaderComponent={
+          <PlantsListHeader
+            query={query}
+            setQuery={setQuery}
+            filter={filter}
+            setFilter={setFilter}
+            resultLabel={filter}
           />
-          <SlidersHorizontal size={20} color={theme.colors.textMuted} />
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={themedStyles.filters}
-        >
-          {filters.map((item) => (
-            <Chip
-              key={item}
-              label={item}
-              selected={filter === item}
-              onPress={() => setFilter(item)}
-            />
-          ))}
-        </ScrollView>
-
-        <View style={themedStyles.listHeader}>
-          <Text style={themedStyles.sectionTitle}>Plant Collection</Text>
-          <Text style={themedStyles.sectionMeta}>{filter}</Text>
-        </View>
-
-        <View style={themedStyles.list}>
-          {visiblePlants.length > 0 ? (
-            visiblePlants.map((plant) => (
-              <PlantListCard
-                key={plant.id}
-                plant={plant}
-                onPress={() => onEditPlant?.(plant)}
-                onViewImage={() => setPreviewPlant(plant)}
-                onToggleFavorite={() => toggleFavoritePlant(plant)}
-                onDelete={() => confirmDeletePlant(plant)}
-                deleting={deletingPlantId === plant.id}
-              />
-            ))
-          ) : (
-            <Card style={themedStyles.emptyCard}>
-              <View style={themedStyles.emptyIcon}>
-                <Sprout size={30} color={theme.colors.primary} />
-              </View>
-              <Text style={themedStyles.emptyTitle}>No plants yet</Text>
-              <Text style={themedStyles.emptyBody}>
-                Add your first plant to start tracking watering, growth, and care.
-              </Text>
-            </Card>
-          )}
-        </View>
-      </ScrollView>
+        }
+        ListEmptyComponent={<EmptyPlantsCard />}
+        ItemSeparatorComponent={PlantSeparator}
+        ListFooterComponent={<View style={themedStyles.listFooter} />}
+        initialNumToRender={8}
+        maxToRenderPerBatch={6}
+        updateCellsBatchingPeriod={50}
+        windowSize={7}
+        removeClippedSubviews
+        onEndReached={loadMorePlants}
+        onEndReachedThreshold={0.45}
+        keyboardShouldPersistTaps="handled"
+      />
 
       <ImagePreviewModal
         plant={previewPlant}
@@ -256,6 +259,68 @@ export function PlantsScreen({ onAddPlant, onEditPlant }) {
       />
     </View>
   );
+}
+
+function PlantsListHeader({ query, setQuery, filter, setFilter, resultLabel }) {
+  const { theme } = useTheme();
+  const themedStyles = createStyles(theme, useGetSafeAreaInsets());
+
+  return (
+    <>
+      <View style={themedStyles.searchBar}>
+        <Search size={20} color={theme.colors.textMuted} />
+        <TextInput
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search plants"
+          placeholderTextColor={theme.colors.textMuted}
+          style={themedStyles.searchInput}
+        />
+        <SlidersHorizontal size={20} color={theme.colors.textMuted} />
+      </View>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={themedStyles.filters}
+      >
+        {filters.map((item) => (
+          <Chip
+            key={item}
+            label={item}
+            selected={filter === item}
+            onPress={() => setFilter(item)}
+          />
+        ))}
+      </ScrollView>
+
+      <View style={themedStyles.listHeader}>
+        <Text style={themedStyles.sectionTitle}>Plant Collection</Text>
+        <Text style={themedStyles.sectionMeta}>{resultLabel}</Text>
+      </View>
+    </>
+  );
+}
+
+function EmptyPlantsCard() {
+  const { theme } = useTheme();
+  const themedStyles = createStyles(theme, useGetSafeAreaInsets());
+
+  return (
+    <Card style={themedStyles.emptyCard}>
+      <View style={themedStyles.emptyIcon}>
+        <Sprout size={30} color={theme.colors.primary} />
+      </View>
+      <Text style={themedStyles.emptyTitle}>No plants yet</Text>
+      <Text style={themedStyles.emptyBody}>
+        Add your first plant to start tracking watering, growth, and care.
+      </Text>
+    </Card>
+  );
+}
+
+function PlantSeparator() {
+  return <View style={styles.separator} />;
 }
 
 function formatPlantsByCategory(plants) {
@@ -288,7 +353,7 @@ function comparePlantsByName(firstPlant, secondPlant) {
   });
 }
 
-function PlantListCard({
+const PlantListCard = memo(function PlantListCard({
   plant,
   onPress,
   onViewImage,
@@ -418,7 +483,7 @@ function PlantListCard({
       </View>
     </Card>
   );
-}
+});
 
 function ImagePreviewModal({ plant, visible, onClose }) {
   const { theme } = useTheme();
@@ -548,6 +613,9 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     fontWeight: "600",
   },
+  separator: {
+    height: 14,
+  },
 });
 
 function createImagePreviewStyles(theme, insets) {
@@ -633,7 +701,7 @@ function createStyles(theme, insets) {
       fontWeight: "800",
       color: theme.colors.primary,
     },
-    scroll: {
+    listContent: {
       paddingHorizontal: 20,
       paddingTop: 20,
       paddingBottom: 132,
@@ -673,8 +741,8 @@ function createStyles(theme, insets) {
       ...theme.typography.label,
       color: theme.colors.primary,
     },
-    list: {
-      gap: 14,
+    listFooter: {
+      height: 14,
     },
     emptyCard: {
       alignItems: "center",

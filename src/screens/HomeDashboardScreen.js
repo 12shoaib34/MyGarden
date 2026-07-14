@@ -8,14 +8,24 @@ import {
   Text,
   View,
 } from "react-native";
-import { Droplets, FileText, Leaf, Sprout, Wheat } from "lucide-react-native";
+import { CalendarClock, FileText, Leaf, Sprout, Wheat } from "lucide-react-native";
 import { Card } from "../components/Card";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { WeatherSummaryCard } from "../components/WeatherSummaryCard";
+import {
+  fertilizerSchedule,
+  getFertilizerMonthKey,
+  getFertilizerTaskDueDate,
+} from "../data/fertilizerSchedule";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { withHaptic } from "../services/hapticService";
 import { getSurjaniTownWeather } from "../services/weatherService";
-import { getDashboardStats, listFavoritePlants, listLatestNotes } from "../storage/database";
+import {
+  getDashboardStats,
+  listFavoritePlants,
+  listFertilizerTaskStates,
+  listLatestNotes,
+} from "../storage/database";
 import { useTheme } from "../theme/ThemeProvider";
 import { getPlantAgeLabel } from "../utils/plantAge";
 import {
@@ -24,7 +34,7 @@ import {
   getNoteTimingState,
 } from "./NotesScreen";
 
-export function HomeDashboardScreen({ onViewAllPlants, onOpenSettings }) {
+export function HomeDashboardScreen({ onViewAllPlants, onOpenMore }) {
   const { theme } = useTheme();
   const insets = useGetSafeAreaInsets();
   const themedStyles = createStyles(theme, insets);
@@ -34,6 +44,9 @@ export function HomeDashboardScreen({ onViewAllPlants, onOpenSettings }) {
     fertilizerDue: 0,
     harvestReady: 0,
   });
+  const [fertilizerSummary, setFertilizerSummary] = useState(() =>
+    getFertilizerDashboardSummary([])
+  );
   const [plants, setPlants] = useState([]);
   const [notes, setNotes] = useState([]);
   const [weather, setWeather] = useState(null);
@@ -43,15 +56,22 @@ export function HomeDashboardScreen({ onViewAllPlants, onOpenSettings }) {
     let alive = true;
 
     async function load() {
-      const [nextStats, nextPlants, nextNotes, nextWeather] = await Promise.all([
+      const monthKey = getFertilizerMonthKey(new Date());
+      const [nextStats, nextPlants, nextNotes, nextWeather, fertilizerStates] = await Promise.all([
         getDashboardStats(),
         listFavoritePlants(5),
         listLatestNotes(3),
         getSurjaniTownWeather(),
+        listFertilizerTaskStates(monthKey),
       ]);
+      const nextFertilizerSummary = getFertilizerDashboardSummary(fertilizerStates);
 
       if (alive) {
-        setStats(nextStats);
+        setStats({
+          ...nextStats,
+          fertilizerDue: nextFertilizerSummary.remainingCount,
+        });
+        setFertilizerSummary(nextFertilizerSummary);
         setPlants(nextPlants);
         setNotes(nextNotes);
         setWeather(nextWeather);
@@ -69,14 +89,21 @@ export function HomeDashboardScreen({ onViewAllPlants, onOpenSettings }) {
     setRefreshing(true);
 
     try {
-      const [nextStats, nextPlants, nextNotes, nextWeather] = await Promise.all([
+      const monthKey = getFertilizerMonthKey(new Date());
+      const [nextStats, nextPlants, nextNotes, nextWeather, fertilizerStates] = await Promise.all([
         getDashboardStats(),
         listFavoritePlants(5),
         listLatestNotes(3),
         getSurjaniTownWeather({ forceRefresh: true }),
+        listFertilizerTaskStates(monthKey),
       ]);
+      const nextFertilizerSummary = getFertilizerDashboardSummary(fertilizerStates);
 
-      setStats(nextStats);
+      setStats({
+        ...nextStats,
+        fertilizerDue: nextFertilizerSummary.remainingCount,
+      });
+      setFertilizerSummary(nextFertilizerSummary);
       setPlants(nextPlants);
       setNotes(nextNotes);
       setWeather(nextWeather);
@@ -87,7 +114,7 @@ export function HomeDashboardScreen({ onViewAllPlants, onOpenSettings }) {
 
   return (
     <View style={themedStyles.screen}>
-      <DashboardHeader onOpenSettings={onOpenSettings} />
+      <DashboardHeader onOpenMore={onOpenMore} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -113,11 +140,12 @@ export function HomeDashboardScreen({ onViewAllPlants, onOpenSettings }) {
             background={theme.colors.statSurface}
           />
           <DashboardStat
-            label="Needs Water"
-            value={stats.waterDue}
-            Icon={Droplets}
-            tone="water"
-            background={theme.colors.waterSurface ?? "#E3F2FD"}
+            label={fertilizerSummary.nextLabel}
+            value={fertilizerSummary.nextValue}
+            meta={fertilizerSummary.nextMeta}
+            Icon={CalendarClock}
+            tone="primary"
+            background={theme.colors.successSurface ?? theme.colors.statSurface}
           />
           <DashboardStat
             label="Fertilizer Due"
@@ -192,7 +220,7 @@ export function HomeDashboardScreen({ onViewAllPlants, onOpenSettings }) {
   );
 }
 
-function DashboardStat({ label, value, Icon, tone, background }) {
+function DashboardStat({ label, value, meta, Icon, tone, background }) {
   const { theme } = useTheme();
   const color = theme.colors[tone] || theme.colors.primary;
   const cardBackground =
@@ -209,7 +237,9 @@ function DashboardStat({ label, value, Icon, tone, background }) {
       ]}
     >
       <Icon size={22} color={color} />
-      <Text style={[styles.statValue, { color }]}>{value}</Text>
+      <Text style={[styles.statValue, meta && styles.statValueCompact, { color }]}>
+        {value}
+      </Text>
       <Text
         style={[
           theme.typography.label,
@@ -218,8 +248,50 @@ function DashboardStat({ label, value, Icon, tone, background }) {
       >
         {label}
       </Text>
+      {meta ? (
+        <Text
+          style={[theme.typography.bodySmall, styles.statMeta, { color: theme.colors.textMuted }]}
+          numberOfLines={1}
+        >
+          {meta}
+        </Text>
+      ) : null}
     </Card>
   );
+}
+
+function getFertilizerDashboardSummary(stateRows) {
+  const now = Date.now();
+  const monthKey = getFertilizerMonthKey(new Date(now));
+  const indexedStates = stateRows.reduce((indexed, row) => {
+    indexed[row.task_id] = row;
+    return indexed;
+  }, {});
+  const pendingTasks = fertilizerSchedule
+    .map((task) => ({
+      ...task,
+      status: indexedStates[task.id]?.status || "pending",
+      dueDate: getFertilizerTaskDueDate(monthKey, task.day),
+    }))
+    .filter((task) => task.status !== "completed" && task.status !== "skipped");
+  const upcomingTask =
+    pendingTasks.find((task) => task.dueDate.getTime() >= now) ?? pendingTasks[0];
+
+  return {
+    remainingCount: pendingTasks.length,
+    nextValue: upcomingTask ? `Day ${upcomingTask.day}` : "Done",
+    nextLabel: upcomingTask ? "Next Fertilizer" : "Fertilizer Clear",
+    nextMeta: upcomingTask ? getShortFertilizerTitle(upcomingTask.title) : "This month complete",
+  };
+}
+
+function getShortFertilizerTitle(title) {
+  return String(title)
+    .replace("Organic ", "")
+    .replace("Seaweed Extract ", "Seaweed ")
+    .replace("Start Making ", "Start ")
+    .replace("Humic Acid Soil Drench", "Humic Drench")
+    .replace("Apply Compost Tea", "Compost Tea");
 }
 
 function GardenCard({ plant }) {
@@ -317,6 +389,13 @@ const styles = StyleSheet.create({
     fontSize: 32,
     lineHeight: 38,
     fontWeight: "700",
+  },
+  statValueCompact: {
+    fontSize: 27,
+    lineHeight: 32,
+  },
+  statMeta: {
+    marginTop: -4,
   },
   gardenCard: {
     width: 200,
