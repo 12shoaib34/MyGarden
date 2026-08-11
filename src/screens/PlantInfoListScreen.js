@@ -4,12 +4,11 @@ import { BookOpen, ChevronRight, Filter, Flower2, Leaf, Search, Sprout, TreePine
 import { AppHeader } from "../components/AppHeader";
 import plantInfo from "../data/plantInfo.json";
 import { Chip } from "../components/Chip";
+import { PLANT_CATEGORY_FILTERS } from "../constants/plantCategories";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { withHaptic } from "../services/hapticService";
 import { useTheme } from "../theme/ThemeProvider";
 import { formatMonths, includesCurrentMonth } from "../utils/months";
-
-const categories = ["All", "Fruit", "Vegetable", "Herb", "Succulent", "Indoor", "Flower", "Tree"];
 
 export function PlantInfoListScreen({ onSelectPlant }) {
   const { theme } = useTheme();
@@ -45,7 +44,7 @@ export function PlantInfoListScreen({ onSelectPlant }) {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.chips}
         >
-          {categories.map((category) => (
+          {PLANT_CATEGORY_FILTERS.map((category) => (
             <Chip
               key={category}
               label={category}

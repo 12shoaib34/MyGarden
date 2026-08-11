@@ -4,6 +4,7 @@ import { AppHeader, HeaderActionButton } from "../components/AppHeader";
 import { Card } from "../components/Card";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { triggerHaptic, withHaptic } from "../services/hapticService";
+import { getSwitchColors } from "../theme/switchColors";
 import { getThemeFamilyId, getThemeIdForFamilyMode, themeFamilies } from "../theme/themes";
 import { useTheme } from "../theme/ThemeProvider";
 
@@ -13,6 +14,7 @@ export function ThemeSettingsScreen({ onBack }) {
   const themedStyles = createStyles(theme, insets);
   const selectedFamilyId = getThemeFamilyId(themeId);
   const isDarkMode = theme.mode === "dark";
+  const darkModeSwitchColors = getSwitchColors(theme, isDarkMode);
 
   function selectFamily(familyId) {
     setThemeId(getThemeIdForFamilyMode(familyId, theme.mode));
@@ -56,11 +58,9 @@ export function ThemeSettingsScreen({ onBack }) {
             <Switch
               value={isDarkMode}
               onValueChange={toggleDarkMode}
-              trackColor={{
-                false: theme.colors.surfaceHigh,
-                true: theme.colors.secondaryContainer,
-              }}
-              thumbColor={isDarkMode ? theme.colors.primary : theme.colors.surface}
+              trackColor={darkModeSwitchColors.trackColor}
+              thumbColor={darkModeSwitchColors.thumbColor}
+              ios_backgroundColor={darkModeSwitchColors.iosBackgroundColor}
             />
           </View>
         </Card>

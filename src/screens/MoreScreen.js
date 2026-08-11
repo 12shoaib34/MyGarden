@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import {
+  BadgeCheck,
   Bell,
   BookOpen,
   CalendarClock,
@@ -20,6 +21,12 @@ import {
   triggerHaptic,
   withHaptic,
 } from "../services/hapticService";
+import {
+  FERTILIZER_CARD_CHECK_ENABLED_KEY,
+  getSetting,
+  setSetting,
+} from "../storage/database";
+import { getSwitchColors } from "../theme/switchColors";
 import { useTheme } from "../theme/ThemeProvider";
 
 export function MoreScreen({
@@ -34,12 +41,19 @@ export function MoreScreen({
   const insets = useGetSafeAreaInsets();
   const themedStyles = createStyles(theme, insets);
   const [hapticsEnabled, setHapticsEnabledState] = useState(true);
+  const [fertilizerCardCheckEnabled, setFertilizerCardCheckEnabled] = useState(false);
+  const fertilizerSwitchColors = getSwitchColors(theme, fertilizerCardCheckEnabled);
+  const hapticsSwitchColors = getSwitchColors(theme, hapticsEnabled);
 
   useEffect(() => {
     let alive = true;
-    getHapticsEnabled().then((enabled) => {
+    Promise.all([
+      getHapticsEnabled(),
+      getSetting(FERTILIZER_CARD_CHECK_ENABLED_KEY, "false"),
+    ]).then(([enabled, fertilizerCheckEnabled]) => {
       if (alive) {
         setHapticsEnabledState(enabled);
+        setFertilizerCardCheckEnabled(fertilizerCheckEnabled === "true");
       }
     });
 
@@ -54,6 +68,16 @@ export function MoreScreen({
       triggerHaptic("toggleOff");
     }
     await setHapticsEnabled(nextValue);
+  }
+
+  async function toggleFertilizerCardCheck(nextValue) {
+    setFertilizerCardCheckEnabled(nextValue);
+    triggerHaptic(nextValue ? "toggleOn" : "toggleOff");
+    try {
+      await setSetting(FERTILIZER_CARD_CHECK_ENABLED_KEY, nextValue ? "true" : "false");
+    } catch {
+      setFertilizerCardCheckEnabled(!nextValue);
+    }
   }
 
   return (
@@ -103,6 +127,22 @@ export function MoreScreen({
           />
           <Card style={themedStyles.toggleTile}>
             <View style={themedStyles.tileIcon}>
+              <BadgeCheck size={24} color={theme.colors.primary} />
+            </View>
+            <View style={themedStyles.tileText}>
+              <Text style={themedStyles.tileTitle}>Fertilizer Tick</Text>
+              <Text style={themedStyles.tileSubtitle}>Plant card quick log</Text>
+            </View>
+            <Switch
+              value={fertilizerCardCheckEnabled}
+              onValueChange={toggleFertilizerCardCheck}
+              trackColor={fertilizerSwitchColors.trackColor}
+              thumbColor={fertilizerSwitchColors.thumbColor}
+              ios_backgroundColor={fertilizerSwitchColors.iosBackgroundColor}
+            />
+          </Card>
+          <Card style={themedStyles.toggleTile}>
+            <View style={themedStyles.tileIcon}>
               <Hand size={24} color={theme.colors.primary} />
             </View>
             <View style={themedStyles.tileText}>
@@ -112,11 +152,9 @@ export function MoreScreen({
             <Switch
               value={hapticsEnabled}
               onValueChange={toggleHaptics}
-              trackColor={{
-                false: theme.colors.surfaceHigh,
-                true: theme.colors.secondaryContainer,
-              }}
-              thumbColor={hapticsEnabled ? theme.colors.primary : theme.colors.surface}
+              trackColor={hapticsSwitchColors.trackColor}
+              thumbColor={hapticsSwitchColors.thumbColor}
+              ios_backgroundColor={hapticsSwitchColors.iosBackgroundColor}
             />
           </Card>
         </MoreSection>

@@ -5,6 +5,8 @@ import { useTheme } from '../theme/ThemeProvider';
 export function Chip({ label, selected, onPress, tone = 'primary' }) {
   const { theme } = useTheme();
   const color = theme.colors[tone] || theme.colors.primary;
+  const selectedBackground = theme.mode === 'dark' ? theme.colors.secondaryContainer : color;
+  const selectedTextColor = theme.mode === 'dark' ? theme.colors.primaryStrong : theme.colors.onPrimary;
 
   return (
     <Pressable
@@ -13,7 +15,7 @@ export function Chip({ label, selected, onPress, tone = 'primary' }) {
         styles.chip,
         {
           borderRadius: theme.radius.full,
-          backgroundColor: selected ? color : theme.colors.surfaceSoft,
+          backgroundColor: selected ? selectedBackground : theme.colors.surfaceSoft,
           borderColor: selected ? color : theme.colors.border,
         },
       ]}
@@ -21,7 +23,7 @@ export function Chip({ label, selected, onPress, tone = 'primary' }) {
       <Text
         style={[
           theme.typography.label,
-          { color: selected ? theme.colors.onPrimary : theme.colors.textMuted },
+          { color: selected ? selectedTextColor : theme.colors.textMuted },
         ]}
       >
         {label}

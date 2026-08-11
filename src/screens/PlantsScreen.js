@@ -19,6 +19,8 @@ import {
   Search,
   SlidersHorizontal,
   Sprout,
+  Square,
+  SquareCheckBig,
   Star,
   Trash2,
   X,
@@ -27,15 +29,23 @@ import { AppHeader, HeaderActionButton } from "../components/AppHeader";
 import { useAppDialog } from "../components/AppDialog";
 import { Card } from "../components/Card";
 import { Chip } from "../components/Chip";
+import { PLANT_CATEGORY_FILTERS } from "../constants/plantCategories";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { withHaptic } from "../services/hapticService";
 import { autoExportBackup } from "../services/localBackupService";
-import { deletePlant, listPlants, setPlantFavorite } from "../storage/database";
+import {
+  FERTILIZER_CARD_CHECK_ENABLED_KEY,
+  deletePlant,
+  getSetting,
+  listPlants,
+  setPlantFavorite,
+  setPlantFertilizerAppliedAt,
+} from "../storage/database";
 import { useTheme } from "../theme/ThemeProvider";
 import { getPlantAgeLabel } from "../utils/plantAge";
 
-const filters = ["All", "Vegetable", "Fruit", "Herb", "Tree", "Flower", "Indoor", "Succulent"];
 const pageSize = 12;
+const dayInMs = 24 * 60 * 60 * 1000;
 
 export function PlantsScreen({ onAddPlant, onEditPlant }) {
   const { theme } = useTheme();
@@ -48,14 +58,19 @@ export function PlantsScreen({ onAddPlant, onEditPlant }) {
   const [deletingPlantId, setDeletingPlantId] = useState(null);
   const [previewPlant, setPreviewPlant] = useState(null);
   const [visibleCount, setVisibleCount] = useState(pageSize);
+  const [fertilizerCardCheckEnabled, setFertilizerCardCheckEnabled] = useState(false);
 
   useEffect(() => {
     let alive = true;
 
     async function loadPlants() {
-      const savedPlants = await listPlants();
+      const [savedPlants, savedFertilizerCardCheckEnabled] = await Promise.all([
+        listPlants(),
+        getSetting(FERTILIZER_CARD_CHECK_ENABLED_KEY, "false"),
+      ]);
       if (alive) {
         setPlants(savedPlants);
+        setFertilizerCardCheckEnabled(savedFertilizerCardCheckEnabled === "true");
       }
     }
 
@@ -104,11 +119,13 @@ export function PlantsScreen({ onAddPlant, onEditPlant }) {
         onPress={() => onEditPlant?.(plant)}
         onViewImage={() => setPreviewPlant(plant)}
         onToggleFavorite={() => toggleFavoritePlant(plant)}
+        onToggleFertilizerApplied={() => toggleFertilizerApplied(plant)}
         onDelete={() => confirmDeletePlant(plant)}
         deleting={deletingPlantId === plant.id}
+        showFertilizerCheck={fertilizerCardCheckEnabled}
       />
     ),
-    [deletingPlantId, onEditPlant]
+    [deletingPlantId, fertilizerCardCheckEnabled, onEditPlant]
   );
 
   const keyExtractor = useCallback((plant) => String(plant.id), []);
@@ -188,6 +205,33 @@ export function PlantsScreen({ onAddPlant, onEditPlant }) {
       );
       await showDialog({
         title: "Favorite failed",
+        message: error.message,
+        variant: "error",
+      });
+    }
+  }
+
+  async function toggleFertilizerApplied(plant) {
+    const previousAppliedAt = plant.fertilizer_applied_at || null;
+    const nextAppliedAt = previousAppliedAt ? null : new Date().toISOString();
+
+    setPlants((currentPlants) =>
+      currentPlants.map((item) =>
+        item.id === plant.id ? { ...item, fertilizer_applied_at: nextAppliedAt } : item
+      )
+    );
+
+    try {
+      await setPlantFertilizerAppliedAt(plant.id, nextAppliedAt);
+      await autoExportBackup();
+    } catch (error) {
+      setPlants((currentPlants) =>
+        currentPlants.map((item) =>
+          item.id === plant.id ? { ...item, fertilizer_applied_at: previousAppliedAt } : item
+        )
+      );
+      await showDialog({
+        title: "Fertilizer log failed",
         message: error.message,
         variant: "error",
       });
@@ -284,7 +328,7 @@ function PlantsListHeader({ query, setQuery, filter, setFilter, resultLabel }) {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={themedStyles.filters}
       >
-        {filters.map((item) => (
+        {PLANT_CATEGORY_FILTERS.map((item) => (
           <Chip
             key={item}
             label={item}
@@ -353,137 +397,203 @@ function comparePlantsByName(firstPlant, secondPlant) {
   });
 }
 
+function formatFertilizerElapsedLabel(appliedAt) {
+  if (!appliedAt) {
+    return "No log";
+  }
+
+  const appliedDate = new Date(appliedAt);
+  if (Number.isNaN(appliedDate.getTime())) {
+    return "No log";
+  }
+
+  const today = startOfLocalDay(new Date());
+  const appliedDay = startOfLocalDay(appliedDate);
+  const elapsedDays = Math.max(0, Math.floor((today.getTime() - appliedDay.getTime()) / dayInMs));
+
+  if (elapsedDays === 0) {
+    return "Today";
+  }
+  if (elapsedDays === 1) {
+    return "1 day";
+  }
+  return `${elapsedDays} days`;
+}
+
+function startOfLocalDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
 const PlantListCard = memo(function PlantListCard({
   plant,
   onPress,
   onViewImage,
   onToggleFavorite,
+  onToggleFertilizerApplied,
   onDelete,
   deleting,
+  showFertilizerCheck,
 }) {
   const { theme } = useTheme();
   const isFavorite = Boolean(plant.is_favorite);
+  const fertilizerApplied = Boolean(plant.fertilizer_applied_at);
 
   return (
     <Card style={styles.card}>
-      <Pressable
-        onPress={plant.image_uri ? withHaptic(onViewImage) : undefined}
-        disabled={!plant.image_uri}
-        accessibilityRole={plant.image_uri ? "imagebutton" : "image"}
-        accessibilityLabel={
-          plant.image_uri ? `View ${plant.name} image` : `${plant.name} has no image`
-        }
-        style={({ pressed }) => [
-          styles.imageBox,
-          {
-            backgroundColor: theme.colors.surfaceSoft,
-            opacity: pressed ? 0.82 : 1,
-          },
-        ]}
-      >
-        {plant.image_uri ? (
-          <>
-            <Image source={{ uri: plant.image_uri }} style={styles.image} />
-            <View
-              style={[
-                styles.viewImageBadge,
-                { backgroundColor: theme.colors.surface },
-              ]}
-            >
-              <Maximize2 size={13} color={theme.colors.primary} />
-            </View>
-          </>
-        ) : (
-          <Sprout size={30} color={theme.colors.primary} />
-        )}
-      </Pressable>
-      <View style={styles.cardBody}>
+      <View style={styles.cardMainRow}>
+        <Pressable
+          onPress={plant.image_uri ? withHaptic(onViewImage) : undefined}
+          disabled={!plant.image_uri}
+          accessibilityRole={plant.image_uri ? "imagebutton" : "image"}
+          accessibilityLabel={
+            plant.image_uri ? `View ${plant.name} image` : `${plant.name} has no image`
+          }
+          style={({ pressed }) => [
+            styles.imageBox,
+            {
+              backgroundColor: theme.colors.surfaceSoft,
+              opacity: pressed ? 0.82 : 1,
+            },
+          ]}
+        >
+          {plant.image_uri ? (
+            <>
+              <Image source={{ uri: plant.image_uri }} style={styles.image} />
+              <View style={[styles.viewImageBadge, { backgroundColor: theme.colors.surface }]}>
+                <Maximize2 size={13} color={theme.colors.primary} />
+              </View>
+            </>
+          ) : (
+            <Sprout size={30} color={theme.colors.primary} />
+          )}
+        </Pressable>
         <Pressable
           onPress={withHaptic(onPress)}
           accessibilityRole="button"
           accessibilityLabel={`Edit ${plant.name}`}
           style={({ pressed }) => [
-            styles.cardDetailsButton,
+            styles.cardBody,
             { opacity: pressed ? 0.76 : 1 },
           ]}
         >
-          <View style={styles.cardTopRow}>
-            <View style={styles.cardTitleText}>
-              <Text
-                style={[styles.plantName, { color: theme.colors.text }]}
-                numberOfLines={2}
-              >
-                {plant.name}
-              </Text>
-              <Text
-                style={[
-                  theme.typography.bodySmall,
-                  { color: theme.colors.textMuted },
-                ]}
-                numberOfLines={1}
-              >
-                {plant.category}
-                {plant.variety ? ` - ${plant.variety}` : ""}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.metaRow}>
-            <View style={styles.metaItem}>
-              <Leaf size={16} color={theme.colors.primary} />
-              <Text style={[styles.metaText, { color: theme.colors.textMuted }]}>
-                {getPlantAgeLabel(plant.purchase_date)}
-              </Text>
-            </View>
-          </View>
+          <Text style={[styles.plantName, { color: theme.colors.text }]} numberOfLines={2}>
+            {plant.name}
+          </Text>
+          <Text style={[styles.plantCategory, { color: theme.colors.textMuted }]} numberOfLines={2}>
+            {plant.category}
+            {plant.variety ? ` - ${plant.variety}` : ""}
+          </Text>
         </Pressable>
       </View>
-      <View style={styles.cardActions}>
-        <Pressable
-          onPress={withHaptic(onToggleFavorite)}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={
-            isFavorite ? `Remove ${plant.name} from favorites` : `Add ${plant.name} to favorites`
-          }
-          style={({ pressed }) => [
-            styles.cardActionButton,
-            {
-              borderColor: isFavorite ? theme.colors.primary : theme.colors.border,
-              backgroundColor: isFavorite
-                ? theme.colors.successSurface
-                : theme.colors.surfaceSoft,
-              opacity: pressed ? 0.72 : 1,
-            },
-          ]}
-        >
-          <Star
-            size={16}
-            color={theme.colors.primary}
-            fill={isFavorite ? theme.colors.primary : "transparent"}
-          />
-        </Pressable>
-        <Pressable
-          onPress={withHaptic(onDelete, "reject")}
-          disabled={deleting}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={`Delete ${plant.name}`}
-          style={({ pressed }) => [
-            styles.cardActionButton,
-            {
-              borderColor: theme.colors.border,
-              backgroundColor: theme.colors.surfaceSoft,
-              opacity: deleting ? 0.45 : pressed ? 0.72 : 1,
-            },
-          ]}
-        >
-          <Trash2 size={16} color={theme.colors.danger || theme.colors.primary} />
-        </Pressable>
+
+      <View style={styles.cardFooter}>
+        <View style={styles.careRow}>
+          <View
+            style={[
+              styles.carePill,
+              {
+                borderColor: theme.colors.border,
+                backgroundColor: theme.colors.surfaceSoft,
+              },
+            ]}
+          >
+            <Leaf size={15} color={theme.colors.primary} />
+            <Text style={[styles.careText, { color: theme.colors.textMuted }]} numberOfLines={1}>
+              {getPlantAgeLabel(plant.purchase_date)}
+            </Text>
+          </View>
+          {showFertilizerCheck ? (
+            <FertilizerCheckChip
+              applied={fertilizerApplied}
+              appliedAt={plant.fertilizer_applied_at}
+              plantName={plant.name}
+              onPress={onToggleFertilizerApplied}
+            />
+          ) : null}
+        </View>
+        <View style={styles.cardActions}>
+          <Pressable
+            onPress={withHaptic(onToggleFavorite)}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={
+              isFavorite ? `Remove ${plant.name} from favorites` : `Add ${plant.name} to favorites`
+            }
+            style={({ pressed }) => [
+              styles.cardActionButton,
+              {
+                borderColor: isFavorite ? theme.colors.primary : theme.colors.border,
+                backgroundColor: isFavorite
+                  ? theme.colors.successSurface
+                  : theme.colors.surfaceSoft,
+                opacity: pressed ? 0.72 : 1,
+              },
+            ]}
+          >
+            <Star
+              size={16}
+              color={theme.colors.primary}
+              fill={isFavorite ? theme.colors.primary : "transparent"}
+            />
+          </Pressable>
+          <Pressable
+            onPress={withHaptic(onDelete, "reject")}
+            disabled={deleting}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={`Delete ${plant.name}`}
+            style={({ pressed }) => [
+              styles.cardActionButton,
+              {
+                borderColor: theme.colors.border,
+                backgroundColor: theme.colors.surfaceSoft,
+                opacity: deleting ? 0.45 : pressed ? 0.72 : 1,
+              },
+            ]}
+          >
+            <Trash2 size={16} color={theme.colors.danger || theme.colors.primary} />
+          </Pressable>
+        </View>
       </View>
     </Card>
   );
 });
+
+function FertilizerCheckChip({ applied, appliedAt, plantName, onPress }) {
+  const { theme } = useTheme();
+  const Icon = applied ? SquareCheckBig : Square;
+
+  return (
+    <Pressable
+      onPress={withHaptic(onPress, applied ? "toggleOff" : "confirm")}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: applied }}
+      accessibilityLabel={
+        applied
+          ? `Reset fertilizer log for ${plantName}`
+          : `Mark fertilizer applied for ${plantName}`
+      }
+      hitSlop={6}
+      style={({ pressed }) => [
+        styles.fertilizerCheck,
+        {
+          borderColor: applied ? theme.colors.primary : theme.colors.border,
+          backgroundColor: applied ? theme.colors.successSurface : theme.colors.surfaceSoft,
+          opacity: pressed ? 0.72 : 1,
+        },
+      ]}
+    >
+      <Icon size={15} color={theme.colors.primary} strokeWidth={2.2} />
+      <Text style={[styles.fertilizerLabel, { color: theme.colors.text }]}>Fert</Text>
+      <Text
+        style={[styles.fertilizerAge, { color: theme.colors.textMuted }]}
+        numberOfLines={1}
+      >
+        {formatFertilizerElapsedLabel(appliedAt)}
+      </Text>
+    </Pressable>
+  );
+}
 
 function ImagePreviewModal({ plant, visible, onClose }) {
   const { theme } = useTheme();
@@ -538,14 +648,20 @@ function ImagePreviewModal({ plant, visible, onClose }) {
 
 const styles = StyleSheet.create({
   card: {
+    flexDirection: "column",
+    alignItems: "stretch",
+    gap: 12,
+    padding: 14,
+  },
+  cardMainRow: {
     flexDirection: "row",
-    gap: 14,
-    padding: 12,
+    alignItems: "center",
+    gap: 12,
   },
   imageBox: {
-    width: 88,
-    height: 104,
-    borderRadius: 18,
+    width: 86,
+    height: 86,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -556,39 +672,37 @@ const styles = StyleSheet.create({
   },
   viewImageBadge: {
     position: "absolute",
-    right: 8,
-    bottom: 8,
-    width: 26,
-    height: 26,
-    borderRadius: 10,
+    right: 7,
+    bottom: 7,
+    width: 28,
+    height: 28,
+    borderRadius: 11,
     alignItems: "center",
     justifyContent: "center",
   },
   cardBody: {
     flex: 1,
-    justifyContent: "space-between",
-    paddingVertical: 4,
+    minWidth: 0,
+    alignSelf: "stretch",
+    justifyContent: "center",
+    gap: 5,
   },
-  cardDetailsButton: {
-    flex: 1,
-    justifyContent: "space-between",
-  },
-  cardTitleText: {
-    flex: 1,
-    gap: 4,
-  },
-  cardTopRow: {
+  cardFooter: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
   },
   cardActions: {
+    flexDirection: "row",
     gap: 8,
+    justifyContent: "center",
+    alignItems: "center",
   },
   cardActionButton: {
     width: 34,
     height: 34,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
@@ -598,20 +712,58 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     fontWeight: "700",
   },
-  metaRow: {
+  plantCategory: {
+    fontSize: 14,
+    lineHeight: 19,
+    fontWeight: "500",
+  },
+  careRow: {
+    flex: 1,
+    minWidth: 0,
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
+    alignItems: "center",
+    gap: 8,
   },
-  metaItem: {
+  carePill: {
+    minHeight: 32,
+    maxWidth: "100%",
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 10,
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
+    gap: 6,
+    flexShrink: 1,
   },
-  metaText: {
+  careText: {
+    flexShrink: 1,
     fontSize: 12,
     lineHeight: 16,
-    fontWeight: "600",
+    fontWeight: "700",
+  },
+  fertilizerCheck: {
+    alignSelf: "flex-start",
+    maxWidth: "100%",
+    minHeight: 32,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flexShrink: 1,
+  },
+  fertilizerLabel: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "800",
+  },
+  fertilizerAge: {
+    maxWidth: 88,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "700",
   },
   separator: {
     height: 14,

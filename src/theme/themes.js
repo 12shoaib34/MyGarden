@@ -1154,6 +1154,102 @@ Object.entries(seasonalThemeOverrides).forEach(([themeId, override]) => {
   });
 });
 
+const cleanDarkSurfaces = {
+  background: '#020302',
+  surface: '#080A08',
+  surfaceSoft: '#0D100E',
+  surfaceHigh: '#141814',
+  statSurface: '#080A08',
+  waterSurface: '#0A1216',
+  fertilizerSurface: '#14110D',
+  harvestSurface: '#171109',
+  successSurface: '#0D100E',
+  errorSurface: '#180E0E',
+  beige: '#0D100E',
+  secondaryContainer: '#0B100D',
+  border: '#1A201C',
+  shadow: '#000000',
+};
+
+Object.values(themes).forEach((theme) => {
+  if (theme.mode === 'dark') {
+    Object.assign(theme.colors, cleanDarkSurfaces);
+  }
+});
+
+const cleanDarkAccentOverrides = {
+  botanicalDark: {
+    primary: '#63B96C',
+    primaryStrong: '#8DCE94',
+    secondary: '#7EAE7F',
+    success: '#63B96C',
+    onPrimary: '#07140A',
+  },
+  citrusDark: {
+    primary: '#D99B2F',
+    primaryStrong: '#EFC56E',
+    secondary: '#B88A43',
+    success: '#7DA96F',
+    warning: '#E7B654',
+    sun: '#E7B654',
+    onPrimary: '#1F1300',
+  },
+  tealDark: {
+    primary: '#5DBEB5',
+    primaryStrong: '#89D7D0',
+    secondary: '#72AAA4',
+    success: '#66B978',
+    water: '#75C4D1',
+    info: '#75C4D1',
+    onPrimary: '#021514',
+  },
+  harvestDark: {
+    primary: '#C48D4F',
+    primaryStrong: '#E1B875',
+    secondary: '#AA8D62',
+    success: '#82A96C',
+    warning: '#DDB45B',
+    sun: '#DDB45B',
+    onPrimary: '#1D1004',
+  },
+  skyDark: {
+    primary: '#83BDB5',
+    primaryStrong: '#ACD8D2',
+    secondary: '#94AAA7',
+    success: '#74AD7B',
+    water: '#78BED1',
+    info: '#78BED1',
+    onPrimary: '#061312',
+  },
+  roseDark: {
+    primary: '#DB8790',
+    primaryStrong: '#F0B2B8',
+    secondary: '#C49498',
+    success: '#74AD7B',
+    onPrimary: '#1D070B',
+  },
+  jadeDark: {
+    primary: '#66BD78',
+    primaryStrong: '#92D69B',
+    secondary: '#79B477',
+    success: '#66BD78',
+    water: '#72C4C9',
+    info: '#72C4C9',
+    onPrimary: '#061409',
+  },
+  limeDark: {
+    primary: '#A7C958',
+    primaryStrong: '#C8E281',
+    secondary: '#99B86A',
+    success: '#83AC68',
+    onPrimary: '#111600',
+  },
+};
+
+Object.entries(cleanDarkAccentOverrides).forEach(([themeId, colors]) => {
+  Object.assign(themes[themeId].colors, colors);
+});
+
 export const themeFamilies = [
   {
     id: 'spring',

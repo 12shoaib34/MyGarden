@@ -1,7 +1,10 @@
 import * as SQLite from 'expo-sqlite';
+import { FALLBACK_PLANT_CATEGORY } from '../constants/plantCategories';
 
 let database;
 let databasePromise;
+
+export const FERTILIZER_CARD_CHECK_ENABLED_KEY = 'fertilizerCardCheckEnabled';
 
 export async function getDatabase() {
   if (!databasePromise) {
@@ -62,6 +65,7 @@ async function migrate(db) {
       notes TEXT,
       water_every_days INTEGER NOT NULL DEFAULT 2,
       fertilizer_every_days INTEGER NOT NULL DEFAULT 15,
+      fertilizer_applied_at TEXT,
       is_favorite INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL
     );
@@ -91,6 +95,7 @@ async function migrate(db) {
     );
   `);
   await ensureColumn(db, 'plants', 'is_favorite', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn(db, 'plants', 'fertilizer_applied_at', 'TEXT');
   await removeDuplicatePlants(db);
 }
 
@@ -215,8 +220,8 @@ export async function importPlants(plants = []) {
 
       await db.runAsync(
         `INSERT INTO plants
-          (name, variety, category, purchase_date, health_status, image_uri, notes, water_every_days, fertilizer_every_days, is_favorite, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          (name, variety, category, purchase_date, health_status, image_uri, notes, water_every_days, fertilizer_every_days, fertilizer_applied_at, is_favorite, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           normalizedPlant.name,
           normalizedPlant.variety,
@@ -227,6 +232,7 @@ export async function importPlants(plants = []) {
           normalizedPlant.notes,
           normalizedPlant.water_every_days,
           normalizedPlant.fertilizer_every_days,
+          normalizedPlant.fertilizer_applied_at,
           normalizedPlant.is_favorite,
           normalizedPlant.created_at,
         ]
@@ -262,13 +268,14 @@ function normalizeImportedPlant(plant = {}) {
   return {
     name: String(plant.name || '').trim(),
     variety: String(plant.variety || '').trim(),
-    category: plant.category || 'Indoor',
+    category: plant.category || FALLBACK_PLANT_CATEGORY,
     purchase_date: plant.purchase_date || plant.purchaseDate || now.slice(0, 10),
     health_status: plant.health_status || plant.healthStatus || 'Healthy',
     image_uri: plant.image_uri || plant.imageUri || null,
     notes: String(plant.notes || '').trim(),
     water_every_days: Number(plant.water_every_days || plant.waterEveryDays) || 2,
     fertilizer_every_days: Number(plant.fertilizer_every_days || plant.fertilizerEveryDays) || 15,
+    fertilizer_applied_at: plant.fertilizer_applied_at || plant.fertilizerAppliedAt || null,
     is_favorite: plant.is_favorite || plant.isFavorite ? 1 : 0,
     created_at: plant.created_at || now,
   };
@@ -317,6 +324,15 @@ export async function setPlantFavorite(id, isFavorite) {
     db.runAsync(
       'UPDATE plants SET is_favorite = ? WHERE id = ?',
       [isFavorite ? 1 : 0, Number(id)]
+    )
+  );
+}
+
+export async function setPlantFertilizerAppliedAt(id, appliedAt) {
+  await runDatabaseOperation((db) =>
+    db.runAsync(
+      'UPDATE plants SET fertilizer_applied_at = ? WHERE id = ?',
+      [appliedAt || null, Number(id)]
     )
   );
 }

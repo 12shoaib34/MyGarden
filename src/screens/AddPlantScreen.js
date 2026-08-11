@@ -15,21 +15,12 @@ import { Card } from "../components/Card";
 import { Chip } from "../components/Chip";
 import { useAppDialog } from "../components/AppDialog";
 import { TextField } from "../components/TextField";
+import { DEFAULT_PLANT_CATEGORY, PLANT_CATEGORIES } from "../constants/plantCategories";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { withHaptic } from "../services/hapticService";
 import { autoExportBackup, backupImageIfEnabled } from "../services/localBackupService";
 import { createPlant, deletePlant, updatePlant } from "../storage/database";
 import { useTheme } from "../theme/ThemeProvider";
-
-const categories = [
-  "Vegetable",
-  "Fruit",
-  "Herb",
-  "Flower",
-  "Tree",
-  "Indoor",
-  "Succulent",
-];
 
 export function AddPlantScreen({ plant, onCancel, onSaved }) {
   const { theme } = useTheme();
@@ -40,7 +31,7 @@ export function AddPlantScreen({ plant, onCancel, onSaved }) {
   const initialDateParts = getDateParts(plant?.purchase_date);
   const [name, setName] = useState(plant?.name || "");
   const [variety, setVariety] = useState(plant?.variety || "");
-  const [category, setCategory] = useState(plant?.category || "Vegetable");
+  const [category, setCategory] = useState(plant?.category || DEFAULT_PLANT_CATEGORY);
   const [dateYear, setDateYear] = useState(initialDateParts.year);
   const [dateMonth, setDateMonth] = useState(initialDateParts.month);
   const [dateDay, setDateDay] = useState(initialDateParts.day);
@@ -61,8 +52,7 @@ export function AddPlantScreen({ plant, onCancel, onSaved }) {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
       quality: 0.8,
-      allowsEditing: true,
-      aspect: [4, 3],
+      allowsEditing: false,
     });
 
     if (!result.canceled && result.assets?.[0]?.uri) {
@@ -196,7 +186,7 @@ export function AddPlantScreen({ plant, onCancel, onSaved }) {
                 ]}
               >
                 {imageUri ? (
-                  <Image source={{ uri: imageUri }} style={styles.image} />
+                  <Image source={{ uri: imageUri }} style={styles.image} resizeMode="contain" />
                 ) : (
                   <View style={styles.imagePlaceholder}>
                     <View style={styles.cameraBadge}>
@@ -232,7 +222,7 @@ export function AddPlantScreen({ plant, onCancel, onSaved }) {
 
           <Text style={styles.fieldLabel}>Category</Text>
           <View style={styles.chips}>
-            {categories.map((item) => (
+            {PLANT_CATEGORIES.map((item) => (
               <Chip
                 key={item}
                 label={item}
