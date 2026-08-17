@@ -21,6 +21,7 @@ import {
   triggerHaptic,
   withHaptic,
 } from "../services/hapticService";
+import { autoSyncCloudBackup } from "../services/cloudSyncService";
 import {
   FERTILIZER_CARD_CHECK_ENABLED_KEY,
   getSetting,
@@ -75,6 +76,7 @@ export function MoreScreen({
     triggerHaptic(nextValue ? "toggleOn" : "toggleOff");
     try {
       await setSetting(FERTILIZER_CARD_CHECK_ENABLED_KEY, nextValue ? "true" : "false");
+      await autoSyncCloudBackup();
     } catch {
       setFertilizerCardCheckEnabled(!nextValue);
     }

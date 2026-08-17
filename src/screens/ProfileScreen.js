@@ -10,6 +10,8 @@ import { TextField } from "../components/TextField";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { autoExportBackup, backupImageIfEnabled } from "../services/localBackupService";
 import { withHaptic } from "../services/hapticService";
+import { autoSyncCloudBackup } from "../services/cloudSyncService";
+import { uploadImageForCloudIfSignedIn } from "../services/cloudinaryService";
 import { getSetting, setSetting } from "../storage/database";
 import { useTheme } from "../theme/ThemeProvider";
 
@@ -61,12 +63,14 @@ export function ProfileScreen({ onBack }) {
   async function saveProfile() {
     setProfileBusy(true);
     try {
-      const backedUpAvatarUri = await backupImageIfEnabled(avatarUri);
+      const cloudAvatarUri = await uploadImageForCloudIfSignedIn(avatarUri);
+      const backedUpAvatarUri = await backupImageIfEnabled(cloudAvatarUri);
       await setSetting("profileFirstName", firstName.trim() || "Gardener");
       await setSetting("profileLastName", lastName.trim());
       await setSetting("profileAvatarUri", backedUpAvatarUri);
       setAvatarUri(backedUpAvatarUri);
       await autoExportBackup();
+      await autoSyncCloudBackup();
       await showDialog({
         title: "Profile saved",
         message: "Your profile is saved locally and included in backup.",

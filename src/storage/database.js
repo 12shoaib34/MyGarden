@@ -96,7 +96,6 @@ async function migrate(db) {
   `);
   await ensureColumn(db, 'plants', 'is_favorite', 'INTEGER NOT NULL DEFAULT 0');
   await ensureColumn(db, 'plants', 'fertilizer_applied_at', 'TEXT');
-  await removeDuplicatePlants(db);
 }
 
 async function ensureColumn(db, tableName, columnName, definition) {
@@ -182,6 +181,15 @@ export async function updatePlant(id, plant) {
         Number(plant.fertilizerEveryDays) || 15,
         Number(id),
       ]
+    )
+  );
+}
+
+export async function updatePlantImageUri(id, imageUri) {
+  await runDatabaseOperation((db) =>
+    db.runAsync(
+      'UPDATE plants SET image_uri = ? WHERE id = ?',
+      [imageUri || null, Number(id)]
     )
   );
 }
@@ -392,6 +400,52 @@ export async function listNotes() {
   );
 }
 
+export async function importNotes(notes = []) {
+  const result = {
+    total: notes.length,
+    inserted: 0,
+    skipped: 0,
+  };
+
+  await runDatabaseOperation((db) => db.withTransactionAsync(async () => {
+    const existingRows = await db.getAllAsync('SELECT * FROM notes');
+    const existingKeys = new Set(existingRows.map(getNoteImportKey));
+
+    for (const note of notes) {
+      const normalizedNote = normalizeImportedNote(note);
+      if (!normalizedNote.title) {
+        result.skipped += 1;
+        continue;
+      }
+
+      const importKey = getNoteImportKey(normalizedNote);
+      if (existingKeys.has(importKey)) {
+        result.skipped += 1;
+        continue;
+      }
+
+      await db.runAsync(
+        `INSERT INTO notes
+          (title, description, reminder_hours, reminder_minutes, reminder_at, notification_identifier, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          normalizedNote.title,
+          normalizedNote.description,
+          normalizedNote.reminder_hours,
+          normalizedNote.reminder_minutes,
+          normalizedNote.reminder_at,
+          normalizedNote.notification_identifier,
+          normalizedNote.created_at,
+        ]
+      );
+      existingKeys.add(importKey);
+      result.inserted += 1;
+    }
+  }));
+
+  return result;
+}
+
 export async function listLatestNotes(limit = 3) {
   return runDatabaseOperation((db) =>
     db.getAllAsync(
@@ -414,6 +468,50 @@ export async function listFertilizerTaskStates(monthKey) {
       [monthKey]
     )
   );
+}
+
+export async function listAllFertilizerTaskStates() {
+  return runDatabaseOperation((db) =>
+    db.getAllAsync(
+      'SELECT * FROM fertilizer_task_states ORDER BY month_key DESC, task_id ASC'
+    )
+  );
+}
+
+export async function importFertilizerTaskStates(taskStates = []) {
+  const result = {
+    total: taskStates.length,
+    upserted: 0,
+    skipped: 0,
+  };
+
+  await runDatabaseOperation((db) => db.withTransactionAsync(async () => {
+    for (const taskState of taskStates) {
+      const normalizedTaskState = normalizeImportedFertilizerTaskState(taskState);
+      if (!normalizedTaskState.month_key || !normalizedTaskState.task_id) {
+        result.skipped += 1;
+        continue;
+      }
+
+      await db.runAsync(
+        `INSERT OR REPLACE INTO fertilizer_task_states
+          (month_key, task_id, status, notes, notification_identifier, completed_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          normalizedTaskState.month_key,
+          normalizedTaskState.task_id,
+          normalizedTaskState.status,
+          normalizedTaskState.notes,
+          normalizedTaskState.notification_identifier,
+          normalizedTaskState.completed_at,
+          normalizedTaskState.updated_at,
+        ]
+      );
+      result.upserted += 1;
+    }
+  }));
+
+  return result;
 }
 
 export async function upsertFertilizerTaskState(monthKey, taskId, changes = {}) {
@@ -481,4 +579,42 @@ export async function listFertilizerHistory(limit = 6) {
       [Number(limit) || 6]
     )
   );
+}
+
+function normalizeImportedNote(note = {}) {
+  const now = new Date().toISOString();
+  return {
+    title: String(note.title || '').trim(),
+    description: String(note.description || '').trim(),
+    reminder_hours: Number(note.reminder_hours || note.reminderHours) || 0,
+    reminder_minutes: Number(note.reminder_minutes || note.reminderMinutes) || 0,
+    reminder_at: note.reminder_at || note.reminderAt || now,
+    notification_identifier: note.notification_identifier || note.notificationIdentifier || null,
+    created_at: note.created_at || now,
+  };
+}
+
+function getNoteImportKey(note) {
+  return [
+    note.title,
+    note.description,
+    note.reminder_hours,
+    note.reminder_minutes,
+    note.reminder_at,
+    note.created_at,
+  ].map((value) => String(value ?? '')).join('\u001f');
+}
+
+function normalizeImportedFertilizerTaskState(taskState = {}) {
+  const now = new Date().toISOString();
+  return {
+    month_key: String(taskState.month_key || taskState.monthKey || '').trim(),
+    task_id: String(taskState.task_id || taskState.taskId || '').trim(),
+    status: taskState.status || 'pending',
+    notes: String(taskState.notes || '').trim(),
+    notification_identifier:
+      taskState.notification_identifier || taskState.notificationIdentifier || null,
+    completed_at: taskState.completed_at || taskState.completedAt || null,
+    updated_at: taskState.updated_at || taskState.updatedAt || now,
+  };
 }

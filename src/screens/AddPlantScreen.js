@@ -18,6 +18,8 @@ import { TextField } from "../components/TextField";
 import { DEFAULT_PLANT_CATEGORY, PLANT_CATEGORIES } from "../constants/plantCategories";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { withHaptic } from "../services/hapticService";
+import { autoSyncCloudBackup } from "../services/cloudSyncService";
+import { uploadImageForCloudRequired } from "../services/cloudinaryService";
 import { autoExportBackup, backupImageIfEnabled } from "../services/localBackupService";
 import { createPlant, deletePlant, updatePlant } from "../storage/database";
 import { useTheme } from "../theme/ThemeProvider";
@@ -82,7 +84,8 @@ export function AddPlantScreen({ plant, onCancel, onSaved }) {
 
     setSaving(true);
     try {
-      const backedUpImageUri = await backupImageIfEnabled(imageUri);
+      const cloudImageUri = await uploadImageForCloudRequired(imageUri);
+      const backedUpImageUri = await backupImageIfEnabled(cloudImageUri);
       const payload = {
         name,
         variety,
@@ -100,6 +103,7 @@ export function AddPlantScreen({ plant, onCancel, onSaved }) {
         await createPlant(payload);
       }
       await autoExportBackup();
+      await autoSyncCloudBackup();
       onSaved?.();
     } catch (error) {
       await showDialog({
@@ -131,6 +135,7 @@ export function AddPlantScreen({ plant, onCancel, onSaved }) {
     try {
       await deletePlant(plant.id);
       await autoExportBackup();
+      await autoSyncCloudBackup();
       onSaved?.();
     } catch (error) {
       await showDialog({

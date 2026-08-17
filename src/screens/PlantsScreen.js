@@ -12,10 +12,13 @@ import {
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import {
+  CalendarDays,
+  Check,
   Copy,
   Leaf,
   Maximize2,
   Plus,
+  RotateCcw,
   Search,
   SlidersHorizontal,
   Sprout,
@@ -32,6 +35,7 @@ import { Chip } from "../components/Chip";
 import { PLANT_CATEGORY_FILTERS } from "../constants/plantCategories";
 import { useGetSafeAreaInsets } from "../hooks/getSafeAreaInsets";
 import { withHaptic } from "../services/hapticService";
+import { autoSyncCloudBackup } from "../services/cloudSyncService";
 import { autoExportBackup } from "../services/localBackupService";
 import {
   FERTILIZER_CARD_CHECK_ENABLED_KEY,
@@ -59,6 +63,9 @@ export function PlantsScreen({ onAddPlant, onEditPlant }) {
   const [previewPlant, setPreviewPlant] = useState(null);
   const [visibleCount, setVisibleCount] = useState(pageSize);
   const [fertilizerCardCheckEnabled, setFertilizerCardCheckEnabled] = useState(false);
+  const [fertilizerEditorPlant, setFertilizerEditorPlant] = useState(null);
+  const [fertilizerDateParts, setFertilizerDateParts] = useState(getFertilizerDateParts);
+  const [fertilizerEditorBusy, setFertilizerEditorBusy] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -119,7 +126,8 @@ export function PlantsScreen({ onAddPlant, onEditPlant }) {
         onPress={() => onEditPlant?.(plant)}
         onViewImage={() => setPreviewPlant(plant)}
         onToggleFavorite={() => toggleFavoritePlant(plant)}
-        onToggleFertilizerApplied={() => toggleFertilizerApplied(plant)}
+        onMarkFertilizerToday={() => markFertilizerAppliedToday(plant)}
+        onOpenFertilizerEditor={() => openFertilizerEditor(plant)}
         onDelete={() => confirmDeletePlant(plant)}
         deleting={deletingPlantId === plant.id}
         showFertilizerCheck={fertilizerCardCheckEnabled}
@@ -174,6 +182,7 @@ export function PlantsScreen({ onAddPlant, onEditPlant }) {
       await deletePlant(plant.id);
       setPlants((currentPlants) => currentPlants.filter((item) => item.id !== plant.id));
       await autoExportBackup();
+      await autoSyncCloudBackup();
     } catch (error) {
       await showDialog({
         title: "Delete failed",
@@ -197,6 +206,7 @@ export function PlantsScreen({ onAddPlant, onEditPlant }) {
     try {
       await setPlantFavorite(plant.id, nextFavorite);
       await autoExportBackup();
+      await autoSyncCloudBackup();
     } catch (error) {
       setPlants((currentPlants) =>
         currentPlants.map((item) =>
@@ -211,30 +221,96 @@ export function PlantsScreen({ onAddPlant, onEditPlant }) {
     }
   }
 
-  async function toggleFertilizerApplied(plant) {
+  async function saveFertilizerAppliedAt(plant, nextAppliedAt) {
     const previousAppliedAt = plant.fertilizer_applied_at || null;
-    const nextAppliedAt = previousAppliedAt ? null : new Date().toISOString();
 
     setPlants((currentPlants) =>
       currentPlants.map((item) =>
         item.id === plant.id ? { ...item, fertilizer_applied_at: nextAppliedAt } : item
       )
     );
+    setFertilizerEditorPlant((currentPlant) =>
+      currentPlant?.id === plant.id
+        ? { ...currentPlant, fertilizer_applied_at: nextAppliedAt }
+        : currentPlant
+    );
 
     try {
       await setPlantFertilizerAppliedAt(plant.id, nextAppliedAt);
       await autoExportBackup();
+      await autoSyncCloudBackup();
+      return true;
     } catch (error) {
       setPlants((currentPlants) =>
         currentPlants.map((item) =>
           item.id === plant.id ? { ...item, fertilizer_applied_at: previousAppliedAt } : item
         )
       );
+      setFertilizerEditorPlant((currentPlant) =>
+        currentPlant?.id === plant.id
+          ? { ...currentPlant, fertilizer_applied_at: previousAppliedAt }
+          : currentPlant
+      );
       await showDialog({
         title: "Fertilizer log failed",
         message: error.message,
         variant: "error",
       });
+      return false;
+    }
+  }
+
+  function markFertilizerAppliedToday(plant) {
+    if (fertilizerEditorBusy) {
+      return;
+    }
+    saveFertilizerAppliedAt(plant, new Date().toISOString());
+  }
+
+  function openFertilizerEditor(plant) {
+    setFertilizerEditorPlant(plant);
+    setFertilizerDateParts(getFertilizerDateParts(plant.fertilizer_applied_at));
+  }
+
+  async function saveFertilizerEditorDate() {
+    if (!fertilizerEditorPlant || fertilizerEditorBusy) {
+      return;
+    }
+
+    const nextAppliedAt = buildFertilizerDateIso(fertilizerDateParts);
+    if (!nextAppliedAt) {
+      await showDialog({
+        title: "Date invalid",
+        message: "Enter a valid fertilizer date.",
+        variant: "warning",
+      });
+      return;
+    }
+
+    setFertilizerEditorBusy(true);
+    try {
+      const saved = await saveFertilizerAppliedAt(fertilizerEditorPlant, nextAppliedAt);
+      if (saved) {
+        setFertilizerEditorPlant(null);
+      }
+    } finally {
+      setFertilizerEditorBusy(false);
+    }
+  }
+
+  async function clearFertilizerEditorDate() {
+    if (!fertilizerEditorPlant || fertilizerEditorBusy) {
+      return;
+    }
+
+    setFertilizerEditorBusy(true);
+    try {
+      const saved = await saveFertilizerAppliedAt(fertilizerEditorPlant, null);
+      if (saved) {
+        setFertilizerEditorPlant(null);
+      }
+    } finally {
+      setFertilizerEditorBusy(false);
     }
   }
 
@@ -300,6 +376,21 @@ export function PlantsScreen({ onAddPlant, onEditPlant }) {
         plant={previewPlant}
         visible={Boolean(previewPlant)}
         onClose={() => setPreviewPlant(null)}
+      />
+      <FertilizerDateSheet
+        visible={Boolean(fertilizerEditorPlant)}
+        plant={fertilizerEditorPlant}
+        dateParts={fertilizerDateParts}
+        busy={fertilizerEditorBusy}
+        onChangeDateParts={setFertilizerDateParts}
+        onUseToday={() => setFertilizerDateParts(getFertilizerDateParts())}
+        onSave={saveFertilizerEditorDate}
+        onClear={clearFertilizerEditorDate}
+        onClose={() => {
+          if (!fertilizerEditorBusy) {
+            setFertilizerEditorPlant(null);
+          }
+        }}
       />
     </View>
   );
@@ -424,12 +515,57 @@ function startOfLocalDay(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
+function getFertilizerDateParts(value) {
+  const date = value ? new Date(value) : new Date();
+  const safeDate = Number.isNaN(date.getTime()) ? new Date() : date;
+
+  return {
+    year: String(safeDate.getFullYear()),
+    month: String(safeDate.getMonth() + 1).padStart(2, "0"),
+    day: String(safeDate.getDate()).padStart(2, "0"),
+  };
+}
+
+function toDigits(value, maxLength) {
+  return String(value || "").replace(/\D/g, "").slice(0, maxLength);
+}
+
+function buildFertilizerDateIso(parts) {
+  const year = toDigits(parts?.year, 4);
+  const month = toDigits(parts?.month, 2).padStart(2, "0");
+  const day = toDigits(parts?.day, 2).padStart(2, "0");
+
+  if (year.length !== 4 || month.length !== 2 || day.length !== 2) {
+    return "";
+  }
+
+  const yearNumber = Number(year);
+  const monthNumber = Number(month);
+  const dayNumber = Number(day);
+  if (monthNumber < 1 || monthNumber > 12 || dayNumber < 1 || dayNumber > 31) {
+    return "";
+  }
+
+  const candidate = new Date(yearNumber, monthNumber - 1, dayNumber, 12, 0, 0, 0);
+  if (
+    Number.isNaN(candidate.getTime()) ||
+    candidate.getFullYear() !== yearNumber ||
+    candidate.getMonth() + 1 !== monthNumber ||
+    candidate.getDate() !== dayNumber
+  ) {
+    return "";
+  }
+
+  return candidate.toISOString();
+}
+
 const PlantListCard = memo(function PlantListCard({
   plant,
   onPress,
   onViewImage,
   onToggleFavorite,
-  onToggleFertilizerApplied,
+  onMarkFertilizerToday,
+  onOpenFertilizerEditor,
   onDelete,
   deleting,
   showFertilizerCheck,
@@ -507,7 +643,8 @@ const PlantListCard = memo(function PlantListCard({
               applied={fertilizerApplied}
               appliedAt={plant.fertilizer_applied_at}
               plantName={plant.name}
-              onPress={onToggleFertilizerApplied}
+              onMarkToday={onMarkFertilizerToday}
+              onOpenEditor={onOpenFertilizerEditor}
             />
           ) : null}
         </View>
@@ -559,39 +696,206 @@ const PlantListCard = memo(function PlantListCard({
   );
 });
 
-function FertilizerCheckChip({ applied, appliedAt, plantName, onPress }) {
+function FertilizerCheckChip({ applied, appliedAt, plantName, onMarkToday, onOpenEditor }) {
   const { theme } = useTheme();
   const Icon = applied ? SquareCheckBig : Square;
 
   return (
-    <Pressable
-      onPress={withHaptic(onPress, applied ? "toggleOff" : "confirm")}
-      accessibilityRole="checkbox"
-      accessibilityState={{ checked: applied }}
-      accessibilityLabel={
-        applied
-          ? `Reset fertilizer log for ${plantName}`
-          : `Mark fertilizer applied for ${plantName}`
-      }
-      hitSlop={6}
-      style={({ pressed }) => [
+    <View
+      style={[
         styles.fertilizerCheck,
         {
           borderColor: applied ? theme.colors.primary : theme.colors.border,
           backgroundColor: applied ? theme.colors.successSurface : theme.colors.surfaceSoft,
-          opacity: pressed ? 0.72 : 1,
         },
       ]}
     >
-      <Icon size={15} color={theme.colors.primary} strokeWidth={2.2} />
-      <Text style={[styles.fertilizerLabel, { color: theme.colors.text }]}>Fert</Text>
-      <Text
-        style={[styles.fertilizerAge, { color: theme.colors.textMuted }]}
-        numberOfLines={1}
+      <Pressable
+        onPress={withHaptic(onMarkToday, "confirm")}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: applied }}
+        accessibilityLabel={`Mark fertilizer applied today for ${plantName}`}
+        hitSlop={8}
+        style={({ pressed }) => [
+          styles.fertilizerIconButton,
+          { opacity: pressed ? 0.66 : 1 },
+        ]}
       >
-        {formatFertilizerElapsedLabel(appliedAt)}
-      </Text>
-    </Pressable>
+        <Icon size={15} color={theme.colors.primary} strokeWidth={2.2} />
+      </Pressable>
+      <Pressable
+        onPress={withHaptic(onOpenEditor)}
+        accessibilityRole="button"
+        accessibilityLabel={`Edit fertilizer date for ${plantName}`}
+        hitSlop={6}
+        style={({ pressed }) => [
+          styles.fertilizerBodyButton,
+          { opacity: pressed ? 0.66 : 1 },
+        ]}
+      >
+        <Text style={[styles.fertilizerLabel, { color: theme.colors.text }]}>Fert</Text>
+        <Text
+          style={[styles.fertilizerAge, { color: theme.colors.textMuted }]}
+          numberOfLines={1}
+        >
+          {formatFertilizerElapsedLabel(appliedAt)}
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function FertilizerDateSheet({
+  visible,
+  plant,
+  dateParts,
+  busy,
+  onChangeDateParts,
+  onUseToday,
+  onSave,
+  onClear,
+  onClose,
+}) {
+  const { theme } = useTheme();
+  const insets = useGetSafeAreaInsets();
+  const sheetStyles = createFertilizerSheetStyles(theme, insets);
+
+  const updatePart = useCallback(
+    (key, value, maxLength) => {
+      onChangeDateParts((currentParts) => ({
+        ...currentParts,
+        [key]: toDigits(value, maxLength),
+      }));
+    },
+    [onChangeDateParts]
+  );
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
+      <View style={sheetStyles.overlay}>
+        <Pressable style={sheetStyles.backdrop} onPress={onClose} disabled={busy} />
+        <View style={sheetStyles.sheet}>
+          <View style={sheetStyles.handle} />
+          <View style={sheetStyles.header}>
+            <View style={sheetStyles.iconWrap}>
+              <CalendarDays size={22} color={theme.colors.primary} />
+            </View>
+            <View style={sheetStyles.titleWrap}>
+              <Text style={sheetStyles.title}>Fertilizer Date</Text>
+              <Text style={sheetStyles.subtitle} numberOfLines={1}>
+                {plant?.name || "Plant"}
+              </Text>
+            </View>
+            <Pressable
+              onPress={withHaptic(onClose)}
+              disabled={busy}
+              accessibilityRole="button"
+              accessibilityLabel="Close fertilizer date"
+              hitSlop={8}
+              style={({ pressed }) => [
+                sheetStyles.closeButton,
+                { opacity: busy ? 0.45 : pressed ? 0.72 : 1 },
+              ]}
+            >
+              <X size={20} color={theme.colors.text} />
+            </Pressable>
+          </View>
+
+          <View style={sheetStyles.dateRow}>
+            <DateInput
+              label="Year"
+              value={dateParts.year}
+              placeholder="YYYY"
+              maxLength={4}
+              onChangeText={(value) => updatePart("year", value, 4)}
+            />
+            <DateInput
+              label="Month"
+              value={dateParts.month}
+              placeholder="MM"
+              maxLength={2}
+              onChangeText={(value) => updatePart("month", value, 2)}
+            />
+            <DateInput
+              label="Day"
+              value={dateParts.day}
+              placeholder="DD"
+              maxLength={2}
+              onChangeText={(value) => updatePart("day", value, 2)}
+            />
+          </View>
+
+          <View style={sheetStyles.actions}>
+            <Pressable
+              onPress={withHaptic(onUseToday, "tap")}
+              disabled={busy}
+              accessibilityRole="button"
+              accessibilityLabel="Use today"
+              style={({ pressed }) => [
+                sheetStyles.secondaryButton,
+                { opacity: busy ? 0.45 : pressed ? 0.76 : 1 },
+              ]}
+            >
+              <CalendarDays size={17} color={theme.colors.primary} />
+              <Text style={sheetStyles.secondaryLabel}>Today</Text>
+            </Pressable>
+            <Pressable
+              onPress={withHaptic(onSave, "confirm")}
+              disabled={busy}
+              accessibilityRole="button"
+              accessibilityLabel="Save fertilizer date"
+              style={({ pressed }) => [
+                sheetStyles.primaryButton,
+                { opacity: busy ? 0.62 : pressed ? 0.82 : 1 },
+              ]}
+            >
+              <Check size={18} color={theme.colors.onPrimary} />
+              <Text style={sheetStyles.primaryLabel}>{busy ? "Saving..." : "Save"}</Text>
+            </Pressable>
+          </View>
+
+          <Pressable
+            onPress={withHaptic(onClear, "reject")}
+            disabled={busy}
+            accessibilityRole="button"
+            accessibilityLabel="Clear fertilizer log"
+            style={({ pressed }) => [
+              sheetStyles.clearButton,
+              { opacity: busy ? 0.45 : pressed ? 0.76 : 1 },
+            ]}
+          >
+            <RotateCcw size={17} color={theme.colors.textMuted} />
+            <Text style={sheetStyles.clearLabel}>Clear Log</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function DateInput({ label, value, placeholder, maxLength, onChangeText }) {
+  const { theme } = useTheme();
+  const themedStyles = createDateInputStyles(theme);
+
+  return (
+    <View style={themedStyles.wrap}>
+      <Text style={themedStyles.label}>{label}</Text>
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={theme.colors.textMuted}
+        keyboardType="number-pad"
+        maxLength={maxLength}
+        style={themedStyles.input}
+      />
+    </View>
   );
 }
 
@@ -748,10 +1052,24 @@ const styles = StyleSheet.create({
     minHeight: 32,
     borderRadius: 14,
     borderWidth: 1,
-    paddingHorizontal: 10,
+    paddingHorizontal: 7,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    flexShrink: 1,
+  },
+  fertilizerIconButton: {
+    width: 25,
+    height: 28,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  fertilizerBodyButton: {
+    minHeight: 28,
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
+    paddingRight: 4,
     flexShrink: 1,
   },
   fertilizerLabel: {
@@ -819,6 +1137,166 @@ function createImagePreviewStyles(theme, insets) {
     previewImage: {
       width: "100%",
       height: "100%",
+    },
+  });
+}
+
+function createFertilizerSheetStyles(theme, insets) {
+  return StyleSheet.create({
+    overlay: {
+      flex: 1,
+      justifyContent: "flex-end",
+      backgroundColor: "rgba(0, 0, 0, 0.54)",
+    },
+    backdrop: {
+      ...StyleSheet.absoluteFillObject,
+    },
+    sheet: {
+      width: "100%",
+      borderTopLeftRadius: 28,
+      borderTopRightRadius: 28,
+      borderWidth: 1,
+      borderBottomWidth: 0,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: 20,
+      paddingTop: 10,
+      paddingBottom: Math.max(insets.bottom, 18) + 12,
+      gap: 18,
+    },
+    handle: {
+      alignSelf: "center",
+      width: 48,
+      height: 5,
+      borderRadius: 999,
+      backgroundColor: theme.colors.border,
+      marginBottom: 2,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    iconWrap: {
+      width: 46,
+      height: 46,
+      borderRadius: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.colors.successSurface,
+    },
+    titleWrap: {
+      flex: 1,
+      minWidth: 0,
+      gap: 2,
+    },
+    title: {
+      ...theme.typography.title,
+      color: theme.colors.text,
+    },
+    subtitle: {
+      ...theme.typography.bodySmall,
+      color: theme.colors.textMuted,
+    },
+    closeButton: {
+      width: 42,
+      height: 42,
+      borderRadius: 15,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.surfaceSoft,
+    },
+    dateRow: {
+      flexDirection: "row",
+      gap: 10,
+    },
+    actions: {
+      flexDirection: "row",
+      gap: 10,
+    },
+    primaryButton: {
+      flex: 1,
+      minHeight: 52,
+      borderRadius: theme.radius.full,
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "row",
+      gap: 8,
+      paddingHorizontal: 16,
+      backgroundColor: theme.colors.primary,
+      borderWidth: 1,
+      borderColor: theme.colors.primary,
+    },
+    primaryLabel: {
+      fontSize: 14,
+      lineHeight: 18,
+      fontWeight: "800",
+      color: theme.colors.onPrimary,
+    },
+    secondaryButton: {
+      flex: 1,
+      minHeight: 52,
+      borderRadius: theme.radius.full,
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "row",
+      gap: 8,
+      paddingHorizontal: 16,
+      backgroundColor: theme.colors.surfaceSoft,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    secondaryLabel: {
+      fontSize: 14,
+      lineHeight: 18,
+      fontWeight: "800",
+      color: theme.colors.primary,
+    },
+    clearButton: {
+      minHeight: 48,
+      borderRadius: theme.radius.full,
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "row",
+      gap: 8,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.surfaceSoft,
+    },
+    clearLabel: {
+      fontSize: 13,
+      lineHeight: 17,
+      fontWeight: "800",
+      color: theme.colors.textMuted,
+    },
+  });
+}
+
+function createDateInputStyles(theme) {
+  return StyleSheet.create({
+    wrap: {
+      flex: 1,
+      gap: 8,
+    },
+    label: {
+      ...theme.typography.label,
+      color: theme.colors.textMuted,
+    },
+    input: {
+      minHeight: 56,
+      borderRadius: theme.radius.md,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.surfaceSoft,
+      color: theme.colors.text,
+      fontSize: 16,
+      lineHeight: 20,
+      fontWeight: "700",
+      textAlign: "center",
+      paddingHorizontal: 10,
+      paddingVertical: 12,
     },
   });
 }

@@ -11,6 +11,10 @@ export function TextField({
   maxLength,
   multiline,
   onFocus,
+  secureTextEntry,
+  autoCapitalize,
+  autoCorrect,
+  textContentType,
 }) {
   const { theme } = useTheme();
   const handleFocus = (event) => {
@@ -29,6 +33,10 @@ export function TextField({
         keyboardType={keyboardType}
         maxLength={maxLength}
         multiline={multiline}
+        secureTextEntry={secureTextEntry}
+        autoCapitalize={autoCapitalize}
+        autoCorrect={autoCorrect}
+        textContentType={textContentType}
         onFocus={handleFocus}
         style={[
           styles.input,
